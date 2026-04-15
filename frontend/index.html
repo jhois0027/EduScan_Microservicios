@@ -5,33 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>EduScan - Corrector de Examenes</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Ì≥± EduScan</h1>
+            <div class="logo-css">ES</div>
+            <h1>EduScan</h1>
             <p>Corrector de examenes por IA</p>
             <p class="small">Calificacion: 0.0 a 5.0</p>
         </div>
 
-        <div class="upload-area" id="uploadArea">
-            <div class="upload-icon">Ì≥∏</div>
-            <p>Toca para seleccionar una foto</p>
-            <input type="file" id="fileInput" accept="image/*" style="display: none">
+        <div class="select-alumno">
+            <label>Seleccionar Alumno:</label>
+            <select id="alumnoSelect">
+                <option value="">-- Seleccione un alumno --</option>
+            </select>
         </div>
 
-        <div class="camera-options">
-            <button id="camaraBtn" class="btn btn-primary">Ì≥∑ Tomar Foto</button>
-            <button id="galeriaBtn" class="btn btn-secondary">Ì∂ºÔ∏è Elegir de Galeria</button>
+        <div class="modos">
+            <button id="modoCamaraBtn" class="btn-modo active">Tomar Foto</button>
+            <button id="modoGaleriaBtn" class="btn-modo">Subir Imagen</button>
+        </div>
+
+        <div id="cameraContainer" style="display: none;">
+            <div class="video-container">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas" style="display: none;"></canvas>
+            </div>
+            <div class="camera-buttons">
+                <button id="capturarBtn" class="btn-capturar">Capturar Examen</button>
+                <button id="cancelarCamaraBtn" class="btn-secundario">Cancelar</button>
+            </div>
+        </div>
+
+        <div id="uploadContainer">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">Ì≥∏</div>
+                <p>Toca para seleccionar una foto del examen</p>
+                <input type="file" id="fileInput" accept="image/*" style="display: none">
+            </div>
         </div>
 
         <div id="previewContainer" style="display: none;">
+            <h3>Vista previa del examen:</h3>
             <img id="preview" class="preview-img">
-            <button id="corregirBtn" class="btn btn-success">‚ú® Corregir Examen</button>
+            <div class="preview-buttons">
+                <button id="corregirBtn" class="btn-corregir">Corregir Examen</button>
+                <button id="cancelarBtn" class="btn-secundario">Cancelar</button>
+            </div>
         </div>
 
         <div id="resultados" style="display: none;" class="resultados">
-            <h2>Ì≥ä Resultados</h2>
+            <h2>Resultados del Examen</h2>
             <div class="nota-circle">
                 <span id="notaValor">0.0</span>
                 <small>/ 5.0</small>
@@ -40,11 +66,11 @@
             <div class="stats">
                 <div class="stat correctas">
                     <span class="stat-value" id="correctas">0</span>
-                    <span class="stat-label">‚úÖ Aprobadas</span>
+                    <span class="stat-label">Correctas</span>
                 </div>
                 <div class="stat incorrectas">
                     <span class="stat-value" id="incorrectas">0</span>
-                    <span class="stat-label">‚ùå Reprobadas</span>
+                    <span class="stat-label">Incorrectas</span>
                 </div>
             </div>
 
@@ -53,7 +79,11 @@
                 <div id="detalleLista"></div>
             </div>
 
-            <button id="nuevoBtn" class="btn btn-secondary">Ì≥ù Corregir otro examen</button>
+            <div class="resultados-buttons">
+                <button id="guardarBtn" class="btn-guardar">Guardar Calificacion</button>
+                <button id="nuevoBtn" class="btn-secundario">Corregir otro examen</button>
+                <a href="dashboard.html" class="btn-dashboard">Ver Dashboard</a>
+            </div>
         </div>
 
         <div id="loading" style="display: none;" class="loading">
@@ -61,6 +91,7 @@
             <p>Procesando con IA...</p>
         </div>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>
