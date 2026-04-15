@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: eduscan-gateway-service
+  namespace: default
+spec:
+  selector:
+    app: eduscan-gateway
+  ports:
+    - port: 80
+      targetPort: 8000
+  type: LoadBalancer

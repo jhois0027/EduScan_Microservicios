@@ -1,0 +1,92 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: eduscan_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: evaluacion_ia
+      MYSQL_USER: eduscan
+      MYSQL_PASSWORD: eduscan123
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    networks:
+      - eduscan_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  gateway:
+    build: ./backend
+    command: uvicorn api.gateway:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    environment:
+      - PROCESAMIENTO_URL=http://procesamiento:8001
+      - IA_URL=http://ia_modelo:8002
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=evaluacion_ia
+    depends_on:
+      - procesamiento
+      - ia_modelo
+      - mysql
+    networks:
+      - eduscan_network
+
+  procesamiento:
+    build: ./backend
+    command: uvicorn services.procesamiento:app --host 0.0.0.0 --port 8001 --reload
+    ports:
+      - "8001:8001"
+    networks:
+      - eduscan_network
+
+  ia_modelo:
+    build: ./backend
+    command: uvicorn services.ia_modelo:app --host 0.0.0.0 --port 8002 --reload
+    ports:
+      - "8002:8002"
+    networks:
+      - eduscan_network
+
+  database_api:
+    build: ./backend
+    command: uvicorn services.database:app --host 0.0.0.0 --port 8003 --reload
+    ports:
+      - "8003:8003"
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=evaluacion_ia
+    depends_on:
+      - mysql
+    networks:
+      - eduscan_network
+
+  frontend:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+      - "3000:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+    networks:
+      - eduscan_network
+    depends_on:
+      - gateway
+
+networks:
+  eduscan_network:
+    driver: bridge
+
+volumes:
+  mysql_data:

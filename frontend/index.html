@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>EduScan - Corrector de Examenes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Ì≥± EduScan</h1>
+            <p>Corrector de examenes por IA</p>
+            <p class="small">Calificacion: 0.0 a 5.0</p>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">Ì≥∏</div>
+            <p>Toca para seleccionar una foto</p>
+            <input type="file" id="fileInput" accept="image/*" style="display: none">
+        </div>
+
+        <div class="camera-options">
+            <button id="camaraBtn" class="btn btn-primary">Ì≥∑ Tomar Foto</button>
+            <button id="galeriaBtn" class="btn btn-secondary">Ì∂ºÔ∏è Elegir de Galeria</button>
+        </div>
+
+        <div id="previewContainer" style="display: none;">
+            <img id="preview" class="preview-img">
+            <button id="corregirBtn" class="btn btn-success">‚ú® Corregir Examen</button>
+        </div>
+
+        <div id="resultados" style="display: none;" class="resultados">
+            <h2>Ì≥ä Resultados</h2>
+            <div class="nota-circle">
+                <span id="notaValor">0.0</span>
+                <small>/ 5.0</small>
+            </div>
+            
+            <div class="stats">
+                <div class="stat correctas">
+                    <span class="stat-value" id="correctas">0</span>
+                    <span class="stat-label">‚úÖ Aprobadas</span>
+                </div>
+                <div class="stat incorrectas">
+                    <span class="stat-value" id="incorrectas">0</span>
+                    <span class="stat-label">‚ùå Reprobadas</span>
+                </div>
+            </div>
+
+            <div class="detalles">
+                <h3>Detalle por pregunta:</h3>
+                <div id="detalleLista"></div>
+            </div>
+
+            <button id="nuevoBtn" class="btn btn-secondary">Ì≥ù Corregir otro examen</button>
+        </div>
+
+        <div id="loading" style="display: none;" class="loading">
+            <div class="spinner"></div>
+            <p>Procesando con IA...</p>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
