@@ -6,8 +6,6 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: evaluacion_ia
-      MYSQL_USER: eduscan
-      MYSQL_PASSWORD: eduscan123
     ports:
       - "3307:3306"
     volumes:
@@ -28,15 +26,9 @@ services:
     environment:
       - PROCESAMIENTO_URL=http://procesamiento:8001
       - IA_URL=http://ia_modelo:8002
-      - DB_HOST=mysql
-      - DB_PORT=3306
-      - DB_USER=root
-      - DB_PASSWORD=root
-      - DB_NAME=evaluacion_ia
     depends_on:
       - procesamiento
       - ia_modelo
-      - mysql
     networks:
       - eduscan_network
 
@@ -53,6 +45,9 @@ services:
     command: uvicorn services.ia_modelo:app --host 0.0.0.0 --port 8002 --reload
     ports:
       - "8002:8002"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}  # Toma la variable del archivo .env
     networks:
       - eduscan_network
 

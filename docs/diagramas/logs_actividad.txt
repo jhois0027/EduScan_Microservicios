@@ -1,0 +1,20 @@
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ TABLA: logs_actividad                                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ PK │ id_log        │ INT(11)          │ NOT NULL │ AUTO_INCREMENT          │
+│ FK │ id_usuario    │ INT(11)          │ NOT NULL │                          │
+│    │ accion        │ VARCHAR(100)     │ NOT NULL │                          │
+│    │ detalle       │ TEXT             │          │                          │
+│    │ ip_address    │ VARCHAR(45)      │          │                          │
+│    │ fecha         │ TIMESTAMP        │          │ DEFAULT CURRENT_TIMESTAMP│
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ TABLA: configuracion_ia                                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ PK │ id_config     │ INT(11)          │ NOT NULL │ AUTO_INCREMENT          │
+│ FK │ id_usuario    │ INT(11)          │ NOT NULL │                          │
+│    │ umbral_aprobacion │ DECIMAL(5,2) │          │ DEFAULT 3.0              │
+│    │ umbral_desempeno │ DECIMAL(5,2)  │          │ DEFAULT 4.0              │
+│    │ preguntas_por_examen │ INT(11)   │          │ DEFAULT 10               │
+└─────────────────────────────────────────────────────────────────────────────┘
