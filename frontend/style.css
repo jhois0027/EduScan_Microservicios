@@ -52,3 +52,40 @@ img { max-width: 100%; margin: 10px 0; border-radius: 10px; }
     font-size: 12px;
     color: #666;
 }
+
+/* Estados de calificación */
+.detalle-item.aprobado {
+    color: #48bb78;
+    background: #e6fffa;
+}
+
+.detalle-item.desempeno {
+    color: #ed8936;
+    background: #fffaf0;
+}
+
+.detalle-item.reprobado {
+    color: #f56565;
+    background: #fff5f5;
+}
+
+.estado-aprobado {
+    background: #48bb78;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+.estado-desempeno {
+    background: #ed8936;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+.estado-reprobado {
+    background: #f56565;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+}

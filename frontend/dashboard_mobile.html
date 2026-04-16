@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>EduScan - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f4f8; color: #1a2a3a; }
+        
+        /* Versión móvil: sidebar colapsada */
+        .app { display: flex; min-height: 100vh; }
+        .sidebar { 
+            width: 70px; 
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
+            color: white; 
+            position: fixed; 
+            height: 100vh; 
+            overflow-y: auto;
+            z-index: 100;
+        }
+        .logo { padding: 20px 12px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .logo h2 { font-size: 16px; font-weight: 700; }
+        .logo p { display: none; }
+        .nav { padding: 16px 0; }
+        .nav-item { 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            gap: 4px; 
+            padding: 12px 8px; 
+            color: rgba(255,255,255,0.8); 
+            text-decoration: none; 
+            transition: all 0.3s; 
+            cursor: pointer; 
+            border-radius: 12px; 
+            margin: 4px 8px; 
+            font-size: 10px;
+            text-align: center;
+        }
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.12); color: white; }
+        .nav-icon { font-size: 20px; width: auto; }
+        .nav-item span:last-child { font-size: 10px; }
+        
+        .main { margin-left: 70px; flex: 1; padding: 16px; }
+        .header { 
+            background: white; 
+            padding: 16px; 
+            border-radius: 16px; 
+            margin-bottom: 16px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+            display: flex; 
+            flex-direction: column;
+            gap: 12px;
+        }
+        .header h1 { font-size: 22px; font-weight: 700; color: #1e293b; }
+        .header-actions { display: flex; gap: 10px; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 16px; border-radius: 16px; text-align: center; }
+        .stat-title { font-size: 11px; font-weight: 500; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
+        .stat-value { font-size: 28px; font-weight: 800; color: #1e293b; }
+        
+        .charts-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 20px; }
+        .card { background: white; border-radius: 16px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .card-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; display: flex; align-items: center; gap: 8px; }
+        .card-title::before { content: ''; width: 3px; height: 16px; background: #3b82f6; border-radius: 4px; display: inline-block; }
+        
+        .top-list { display: flex; flex-direction: column; gap: 10px; }
+        .top-item { display: flex; align-items: center; gap: 12px; padding: 10px; background: #f8fafc; border-radius: 12px; }
+        .top-rank { font-size: 18px; font-weight: 800; width: 40px; text-align: center; }
+        .top-rank-1 { color: #f59e0b; }
+        .top-rank-2 { color: #94a3b8; }
+        .top-rank-3 { color: #cd7f32; }
+        .top-info { flex: 1; }
+        .top-name { font-weight: 600; font-size: 14px; }
+        .top-score { font-size: 16px; font-weight: 700; color: #3b82f6; }
+        
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f8fafc; font-weight: 600; }
+        
+        .comparativa-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 16px; }
+        .comparativa-card { background: #f8fafc; border-radius: 12px; padding: 12px; border-left: 3px solid #3b82f6; }
+        .comparativa-modulo { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+        .comparativa-promedio { font-size: 22px; font-weight: 800; color: #3b82f6; margin: 8px 0; }
+        .progress-bar { background: #e2e8f0; border-radius: 10px; height: 6px; margin-top: 8px; overflow: hidden; }
+        .progress-fill { background: #3b82f6; height: 100%; border-radius: 10px; }
+        
+        .form-group { margin-bottom: 12px; }
+        .form-group label { font-size: 12px; font-weight: 500; margin-bottom: 4px; display: block; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; }
+        
+        .btn { padding: 8px 16px; border: none; border-radius: 10px; font-size: 12px; font-weight: 500; cursor: pointer; margin: 4px 2px; }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-sm { padding: 4px 8px; font-size: 11px; }
+        
+        .badge { padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; display: inline-block; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: white; border-radius: 16px; width: 90%; max-width: 350px; padding: 20px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .close { font-size: 24px; cursor: pointer; }
+        
+        .page { display: none; }
+        .page.active { display: block; }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="sidebar">
+        <div class="logo">
+            <h2>ES</h2>
+            <p>Analytics</p>
+        </div>
+        <div class="nav">
+            <div class="nav-item active" data-page="dashboard"><span class="nav-icon">H</span> <span>Dash</span></div>
+            <div class="nav-item" data-page="alumnos"><span class="nav-icon">U</span> <span>Alumnos</span></div>
+            <div class="nav-item" data-page="modulos"><span class="nav-icon">M</span> <span>Modulos</span></div>
+            <div class="nav-item" data-page="examenes"><span class="nav-icon">E</span> <span>Examenes</span></div>
+            <div class="nav-item" data-page="puntajes"><span class="nav-icon">S</span> <span>Puntajes</span></div>
+            <div class="nav-item" data-page="comparativa"><span class="nav-icon">C</span> <span>Comp</span></div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <h1 id="pageTitle">Dashboard</h1>
+            <div class="header-actions">
+                <button class="btn btn-success btn-sm" onclick="exportarCSV()">Exportar CSV</button>
+            </div>
+        </div>
+
+        <div id="page-dashboard" class="page active">
+            <div class="stats-grid" id="statsGrid"></div>
+            <div class="charts-grid">
+                <div class="card">
+                    <div class="card-title">Rendimiento por Modulo</div>
+                    <canvas id="modulosChart" height="200"></canvas>
+                </div>
+                <div class="card">
+                    <div class="card-title">Top 5 Mejores Alumnos</div>
+                    <div id="topAlumnosList" class="top-list"></div>
+                </div>
+            </div>
+            <div class="card"><div class="card-title">Evolucion de Notas</div><canvas id="evolucionChart" height="180"></canvas></div>
+        </div>
+
+        <div id="page-alumnos" class="page">
+            <div class="card" style="margin-bottom:16px">
+                <div class="card-title">Agregar Alumno</div>
+                <input type="text" id="newNombre" placeholder="Nombre" style="width:100%; padding:10px; margin-bottom:8px; border:1px solid #ddd; border-radius:10px">
+                <input type="email" id="newCorreo" placeholder="Correo" style="width:100%; padding:10px; margin-bottom:8px; border:1px solid #ddd; border-radius:10px">
+                <button class="btn btn-primary btn-sm" onclick="crearAlumno()">Agregar</button>
+            </div>
+            <div class="card"><div class="card-title">Lista de Alumnos</div><div class="table-wrapper" id="listaAlumnos"></div></div>
+        </div>
+
+        <div id="page-modulos" class="page">
+            <div class="card" style="margin-bottom:16px">
+                <div class="card-title">Agregar Modulo</div>
+                <input type="text" id="newModuloNombre" placeholder="Nombre" style="width:100%; padding:10px; margin-bottom:8px; border:1px solid #ddd; border-radius:10px">
+                <input type="text" id="newModuloDesc" placeholder="Descripcion" style="width:100%; padding:10px; margin-bottom:8px; border:1px solid #ddd; border-radius:10px">
+                <input type="color" id="newModuloColor" value="#3b82f6" style="width:60px; margin-bottom:8px">
+                <button class="btn btn-primary btn-sm" onclick="crearModulo()">Agregar</button>
+            </div>
+            <div class="card"><div class="card-title">Lista de Modulos</div><div class="table-wrapper" id="listaModulos"></div></div>
+        </div>
+
+        <div id="page-examenes" class="page">
+            <div class="card" style="margin-bottom:16px">
+                <div class="card-title">Agregar Examen</div>
+                <input type="text" id="newExamenNombre" placeholder="Nombre" style="width:100%; padding:10px; margin-bottom:8px; border:1px solid #ddd; border-radius:10px">
+                <select id="newExamenModulo" style="width:100%; padding:10px; margin-bottom:8px; border:1px solid #ddd; border-radius:10px"></select>
+                <input type="date" id="newExamenFecha" style="width:100%; padding:10px; margin-bottom:8px; border:1px solid #ddd; border-radius:10px">
+                <button class="btn btn-primary btn-sm" onclick="crearExamen()">Agregar</button>
+            </div>
+            <div class="card"><div class="card-title">Lista de Examenes</div><div class="table-wrapper" id="listaExamenes"></div></div>
+        </div>
+
+        <div id="page-puntajes" class="page">
+            <div class="card" style="margin-bottom:16px">
+                <div class="card-title">Ver Puntajes por Alumno</div>
+                <select id="selectAlumnoPuntajes" style="width:100%; padding:10px; margin-bottom:8px; border:1px solid #ddd; border-radius:10px"></select>
+                <button class="btn btn-primary btn-sm" onclick="verPuntajesAlumno()">Ver</button>
+            </div>
+            <div class="card"><div class="card-title">Historial de Puntajes</div><div class="table-wrapper" id="puntajesAlumno"></div></div>
+        </div>
+
+        <div id="page-comparativa" class="page">
+            <div class="card" style="margin-bottom:16px">
+                <div class="card-title">Comparativa por Modulo</div>
+                <select id="selectAlumnoComparativa" style="width:100%; padding:10px; margin-bottom:8px; border:1px solid #ddd; border-radius:10px"></select>
+                <button class="btn btn-primary btn-sm" onclick="verComparativa()">Ver</button>
+            </div>
+            <div class="card"><div class="card-title">Rendimiento por Modulo</div><div id="comparativaResultados" class="comparativa-grid"></div></div>
+        </div>
+    </div>
+</div>
+
+<div id="modal" class="modal"><div class="modal-content"><div class="modal-header"><h3 id="modalTitle"></h3><span class="close" onclick="cerrarModal()">&times;</span></div><div id="modalBody"></div></div></div>
+
+<script>
+const API = 'http://192.168.1.36:8003';
+let charts = {};
+
+async function loadDashboard() {
+    const stats = await fetch(API+'/estadisticas').then(r=>r.json());
+    document.getElementById('statsGrid').innerHTML = `
+        <div class="stat-card"><div class="stat-title">Total Alumnos</div><div class="stat-value">${stats.total_alumnos||0}</div></div>
+        <div class="stat-card"><div class="stat-title">Evaluaciones</div><div class="stat-value">${stats.total_evaluaciones||0}</div></div>
+        <div class="stat-card"><div class="stat-title">Promedio</div><div class="stat-value">${stats.promedio_general||0}</div></div>
+        <div class="stat-card"><div class="stat-title">Mejor Nota</div><div class="stat-value">${stats.mejor_nota||0}</div></div>
+    `;
+    
+    const top = await fetch(API+'/top_alumnos').then(r=>r.json());
+    const topAlumnos = (top.top_alumnos || []).sort((a,b) => b.promedio - a.promedio).slice(0,5);
+    document.getElementById('topAlumnosList').innerHTML = topAlumnos.map((a, i) => `
+        <div class="top-item">
+            <div class="top-rank top-rank-${i+1}">${i+1}</div>
+            <div class="top-info"><div class="top-name">${a.nombre}</div></div>
+            <div class="top-score">${a.promedio.toFixed(1)}</div>
+        </div>
+    `).join('');
+    
+    const modulos = await fetch(API+'/modulos').then(r=>r.json());
+    const evaluaciones = await fetch(API+'/evaluaciones').then(r=>r.json());
+    const modulosPromedio = {};
+    const modulosColors = {};
+    (modulos.modulos || []).forEach(m => {
+        modulosPromedio[m.nombre] = { total: 0, count: 0 };
+        modulosColors[m.nombre] = m.color || '#3b82f6';
+    });
+    (evaluaciones.evaluaciones || []).forEach(e => {
+        let moduloAsignado = (modulos.modulos || [])[Math.floor(Math.random() * (modulos.modulos || []).length)];
+        if(moduloAsignado && modulosPromedio[moduloAsignado.nombre]) {
+            modulosPromedio[moduloAsignado.nombre].total += e.puntaje;
+            modulosPromedio[moduloAsignado.nombre].count += 1;
+        }
+    });
+    const modulosLabels = Object.keys(modulosPromedio);
+    const modulosData = modulosLabels.map(m => modulosPromedio[m].count > 0 ? (modulosPromedio[m].total / modulosPromedio[m].count).toFixed(1) : 0);
+    const modulosBgColors = modulosLabels.map(m => modulosColors[m] || '#3b82f6');
+    
+    if(charts.modulos) charts.modulos.destroy();
+    charts.modulos = new Chart(document.getElementById('modulosChart'), {
+        type: 'bar',
+        data: { labels: modulosLabels, datasets: [{ label: 'Rendimiento', data: modulosData, backgroundColor: modulosBgColors, borderRadius: 6 }] },
+        options: { responsive: true, maintainAspectRatio: true, indexAxis: 'y', plugins: { legend: { position: 'top' } }, scales: { x: { max: 5 } } }
+    });
+    
+    if(charts.evolucion) charts.evolucion.destroy();
+    charts.evolucion = new Chart(document.getElementById('evolucionChart'), {
+        type: 'line',
+        data: { labels: (evaluaciones.evaluaciones || []).slice(0,8).map(e=>e.fecha) || [], datasets: [{ label: 'Notas', data: (evaluaciones.evaluaciones || []).slice(0,8).map(e=>e.puntaje) || [], borderColor: '#10b981', tension: 0.3 }] },
+        options: { responsive: true, scales: { y: { max: 5 } } }
+    });
+}
+
+async function loadAlumnos() {
+    const res = await fetch(API+'/alumnos'); const data = await res.json();
+    const alumnosOrdenados = (data.alumnos || []).sort((a,b) => a.id_alumno - b.id_alumno);
+    document.getElementById('listaAlumnos').innerHTML = `<table><thead><tr><th>ID</th><th>Nombre</th><th>Correo</th><th>Acciones</th></tr></thead><tbody>${
+        alumnosOrdenados.map(a=>`<tr><td style="font-size:12px">${a.id_alumno}</td><td style="font-size:12px">${a.nombre}</td><td style="font-size:11px">${a.correo}</td><td><button class="btn btn-warning btn-sm" onclick="editarAlumno(${a.id_alumno},'${a.nombre}','${a.correo}')">E</button> <button class="btn btn-danger btn-sm" onclick="eliminarAlumno(${a.id_alumno})">X</button></td></tr>`).join('')
+    }</tbody></table>`;
+    const select = document.getElementById('selectAlumnoPuntajes');
+    const select2 = document.getElementById('selectAlumnoComparativa');
+    if(select) select.innerHTML = alumnosOrdenados.map(a=>`<option value="${a.id_alumno}">${a.nombre}</option>`).join('');
+    if(select2) select2.innerHTML = alumnosOrdenados.map(a=>`<option value="${a.id_alumno}">${a.nombre}</option>`).join('');
+}
+
+async function crearAlumno() {
+    const nombre = document.getElementById('newNombre').value;
+    const correo = document.getElementById('newCorreo').value;
+    if(!nombre || !correo) return alert('Complete los campos');
+    await fetch(`${API}/alumnos?nombre=${encodeURIComponent(nombre)}&correo=${encodeURIComponent(correo)}`, {method:'POST'});
+    document.getElementById('newNombre').value = '';
+    document.getElementById('newCorreo').value = '';
+    loadAlumnos();
+}
+
+async function eliminarAlumno(id) {
+    if(confirm('Eliminar este alumno?')) await fetch(`${API}/alumnos/${id}`, {method:'DELETE'});
+    loadAlumnos();
+}
+
+function editarAlumno(id, nombre, correo) {
+    const modal = document.getElementById('modal');
+    document.getElementById('modalTitle').innerText = 'Editar Alumno';
+    document.getElementById('modalBody').innerHTML = `
+        <div class="form-group"><label>Nombre</label><input type="text" id="editNombre" value="${nombre}" class="form-control"></div>
+        <div class="form-group"><label>Correo</label><input type="email" id="editCorreo" value="${correo}" class="form-control"></div>
+        <button class="btn btn-primary" onclick="guardarAlumno(${id})">Guardar</button>
+    `;
+    modal.style.display = 'flex';
+}
+
+async function guardarAlumno(id) {
+    const nombre = document.getElementById('editNombre').value;
+    const correo = document.getElementById('editCorreo').value;
+    await fetch(`${API}/alumnos/${id}?nombre=${encodeURIComponent(nombre)}&correo=${encodeURIComponent(correo)}`, {method:'PUT'});
+    cerrarModal();
+    loadAlumnos();
+}
+
+async function loadModulos() {
+    const res = await fetch(API+'/modulos'); const data = await res.json();
+    const modulosOrdenados = (data.modulos || []).sort((a,b) => a.id_modulo - b.id_modulo);
+    document.getElementById('listaModulos').innerHTML = `<table><thead><tr><th>ID</th><th>Nombre</th><th>Color</th><th>Acciones</th></tr></thead><tbody>${
+        modulosOrdenados.map(m=>`<td>${m.id_modulo}</td>}<td style="font-size:12px">${m.nombre}</td><td style="background:${m.color}; width:40px">${m.color}</td><td><button class="btn btn-warning btn-sm" onclick="editarModulo(${m.id_modulo},'${m.nombre}','${m.descripcion||''}','${m.color}')">E</button> <button class="btn btn-danger btn-sm" onclick="eliminarModulo(${m.id_modulo})">X</button></td></tr>`).join('')
+    }</tbody></table>`;
+    const select = document.getElementById('newExamenModulo');
+    if(select) select.innerHTML = modulosOrdenados.map(m=>`<option value="${m.id_modulo}">${m.nombre}</option>`).join('');
+}
+
+async function crearModulo() {
+    const nombre = document.getElementById('newModuloNombre').value;
+    const descripcion = document.getElementById('newModuloDesc').value;
+    const color = document.getElementById('newModuloColor').value;
+    if(!nombre) return alert('Complete el nombre');
+    await fetch(`${API}/modulos?nombre=${encodeURIComponent(nombre)}&descripcion=${encodeURIComponent(descripcion)}&color=${color}`, {method:'POST'});
+    document.getElementById('newModuloNombre').value = '';
+    document.getElementById('newModuloDesc').value = '';
+    loadModulos();
+}
+
+async function eliminarModulo(id) {
+    if(confirm('Eliminar este modulo?')) await fetch(`${API}/modulos/${id}`, {method:'DELETE'});
+    loadModulos();
+}
+
+function editarModulo(id, nombre, desc, color) {
+    const modal = document.getElementById('modal');
+    document.getElementById('modalTitle').innerText = 'Editar Modulo';
+    document.getElementById('modalBody').innerHTML = `
+        <div class="form-group"><label>Nombre</label><input type="text" id="editModuloNombre" value="${nombre}"></div>
+        <div class="form-group"><label>Descripcion</label><input type="text" id="editModuloDesc" value="${desc}"></div>
+        <div class="form-group"><label>Color</label><input type="color" id="editModuloColor" value="${color}"></div>
+        <button class="btn btn-primary" onclick="guardarModulo(${id})">Guardar</button>
+    `;
+    modal.style.display = 'flex';
+}
+
+async function guardarModulo(id) {
+    const nombre = document.getElementById('editModuloNombre').value;
+    const descripcion = document.getElementById('editModuloDesc').value;
+    const color = document.getElementById('editModuloColor').value;
+    await fetch(`${API}/modulos/${id}?nombre=${encodeURIComponent(nombre)}&descripcion=${encodeURIComponent(descripcion)}&color=${color}`, {method:'PUT'});
+    cerrarModal();
+    loadModulos();
+}
+
+async function loadExamenes() {
+    const res = await fetch(API+'/examenes'); const data = await res.json();
+    const examenesOrdenados = (data.examenes || []).sort((a,b) => a.id_examen - b.id_examen);
+    document.getElementById('listaExamenes').innerHTML = `<table><thead><tr><th>ID</th><th>Nombre</th><th>Modulo</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>${
+        examenesOrdenados.map(e=>`<tr><td style="font-size:12px">${e.id_examen}</td><td style="font-size:12px">${e.nombre}</td><td style="font-size:12px">${e.modulo_nombre}</td><td style="font-size:11px">${e.fecha}</td><td><button class="btn btn-warning btn-sm" onclick="editarExamen(${e.id_examen},'${e.nombre}',${e.id_modulo},'${e.fecha}')">E</button> <button class="btn btn-danger btn-sm" onclick="eliminarExamen(${e.id_examen})">X</button></td></tr>`).join('')
+    }</tbody></table>`;
+}
+
+async function crearExamen() {
+    const nombre = document.getElementById('newExamenNombre').value;
+    const id_modulo = document.getElementById('newExamenModulo').value;
+    const fecha = document.getElementById('newExamenFecha').value;
+    if(!nombre || !id_modulo || !fecha) return alert('Complete todos los campos');
+    await fetch(`${API}/examenes?nombre=${encodeURIComponent(nombre)}&id_modulo=${id_modulo}&fecha=${fecha}`, {method:'POST'});
+    document.getElementById('newExamenNombre').value = '';
+    document.getElementById('newExamenFecha').value = '';
+    loadExamenes();
+}
+
+function editarExamen(id, nombre, id_modulo, fecha) {
+    const modal = document.getElementById('modal');
+    document.getElementById('modalTitle').innerText = 'Editar Examen';
+    document.getElementById('modalBody').innerHTML = `
+        <div class="form-group"><label>Nombre</label><input type="text" id="editExamenNombre" value="${nombre}"></div>
+        <div class="form-group"><label>Modulo</label><select id="editExamenModulo"></select></div>
+        <div class="form-group"><label>Fecha</label><input type="date" id="editExamenFecha" value="${fecha}"></div>
+        <button class="btn btn-primary" onclick="guardarExamen(${id})">Guardar</button>
+    `;
+    fetch(API+'/modulos').then(r=>r.json()).then(data => {
+        const select = document.getElementById('editExamenModulo');
+        select.innerHTML = (data.modulos || []).map(m=>`<option value="${m.id_modulo}" ${m.id_modulo == id_modulo ? 'selected' : ''}>${m.nombre}</option>`).join('');
+    });
+    modal.style.display = 'flex';
+}
+
+async function guardarExamen(id) {
+    const nombre = document.getElementById('editExamenNombre').value;
+    const id_modulo = document.getElementById('editExamenModulo').value;
+    const fecha = document.getElementById('editExamenFecha').value;
+    await fetch(`${API}/examenes/${id}?nombre=${encodeURIComponent(nombre)}&id_modulo=${id_modulo}&fecha=${fecha}`, {method:'PUT'});
+    cerrarModal();
+    loadExamenes();
+}
+
+async function eliminarExamen(id) {
+    if(confirm('Eliminar este examen?')) await fetch(`${API}/examenes/${id}`, {method:'DELETE'});
+    loadExamenes();
+}
+
+async function verPuntajesAlumno() {
+    const id = document.getElementById('selectAlumnoPuntajes').value;
+    if(!id) return alert('Seleccione un alumno');
+    const res = await fetch(API+`/puntajes/alumno/${id}`); const data = await res.json();
+    if(!data.puntajes || data.puntajes.length === 0) {
+        document.getElementById('puntajesAlumno').innerHTML = '<div style="text-align:center;padding:20px;">No hay puntajes</div>';
+        return;
+    }
+    document.getElementById('puntajesAlumno').innerHTML = `<table><thead><tr><th>Examen</th><th>Modulo</th><th>Puntaje</th><th>Fecha</th></tr></thead><tbody>${
+        data.puntajes.map(p=>`<tr><td style="font-size:12px">${p.examen_nombre||'-'}</td><td style="font-size:12px">${p.modulo_nombre||'-'}</td><td style="font-size:12px"><strong>${p.puntaje}</strong></td><td style="font-size:11px">${p.fecha}</td></tr>`).join('')
+    }</tbody></table>`;
+}
+
+async function verComparativa() {
+    const id = document.getElementById('selectAlumnoComparativa').value;
+    if(!id) return alert('Seleccione un alumno');
+    const res = await fetch(API+`/comparativa/${id}`); const data = await res.json();
+    const comparativa = data.comparativa || [];
+    if(comparativa.length === 0) {
+        document.getElementById('comparativaResultados').innerHTML = '<div style="text-align:center;padding:20px;">No hay datos</div>';
+        return;
+    }
+    const maxPromedio = Math.max(...comparativa.map(c => c.promedio), 0.1);
+    document.getElementById('comparativaResultados').innerHTML = comparativa.map(c => {
+        const porcentaje = (c.promedio / maxPromedio) * 100;
+        return `<div class="comparativa-card"><div class="comparativa-modulo">${c.modulo}</div><div class="comparativa-promedio">${c.promedio.toFixed(1)} / 5.0</div><div class="progress-bar"><div class="progress-fill" style="width: ${porcentaje}%"></div></div><div class="comparativa-total">Total: ${c.total}</div></div>`;
+    }).join('');
+}
+
+async function exportarCSV() {
+    const alumnos = await fetch(API+'/alumnos').then(r=>r.json());
+    let csv = 'ID,Nombre,Correo\n';
+    (alumnos.alumnos || []).forEach(a => csv += `${a.id_alumno},${a.nombre},${a.correo}\n`);
+    const blob = new Blob([csv], {type: 'text/csv'});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'alumnos.csv';
+    link.click();
+}
+
+function cerrarModal() { document.getElementById('modal').style.display = 'none'; }
+
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.onclick = () => {
+        document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+        item.classList.add('active');
+        document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+        document.getElementById(`page-${item.dataset.page}`).classList.add('active');
+        document.getElementById('pageTitle').innerText = item.innerText.trim();
+        if(item.dataset.page === 'alumnos') loadAlumnos();
+        if(item.dataset.page === 'modulos') loadModulos();
+        if(item.dataset.page === 'examenes') loadExamenes();
+    };
+});
+
+loadDashboard();
+loadAlumnos();
+loadModulos();
+loadExamenes();
+</script>
+</body>
+</html>
