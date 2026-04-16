@@ -2,96 +2,652 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>EduScan - Corrector de Examenes</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>EduScan - Corrector de Exámenes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f5f7fa; }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 32px 24px;
+            color: white;
+            border-radius: 0 0 32px 32px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header h1 .logo {
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 600;
+        }
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 8px;
+            margin-left: 56px;
+        }
+        
+        .tabs {
+            display: flex;
+            background: white;
+            margin: 0 16px 20px 16px;
+            padding: 6px;
+            border-radius: 60px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .tab {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+        }
+        
+        .content { padding: 0 16px 20px 16px; max-width: 500px; margin: 0 auto; }
+        .panel { display: none; animation: fadeIn 0.3s ease; }
+        .panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .card {
+            background: white;
+            border-radius: 28px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 3px solid #667eea;
+            padding-left: 14px;
+        }
+        
+        select {
+            width: 100%;
+            padding: 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            font-size: 15px;
+            background: white;
+            font-weight: 500;
+            color: #1e293b;
+        }
+        select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+        
+        .btn {
+            padding: 16px 20px;
+            border: none;
+            border-radius: 20px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-secondary { background: #f1f5f9; color: #475569; }
+        .btn-outline { background: transparent; border: 2px solid #e2e8f0; color: #475569; }
+        
+        .icon { width: 20px; height: 20px; display: inline-block; background-size: contain; background-repeat: no-repeat; background-position: center; }
+        .icon-camera { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M12 13a3 3 0 100-6 3 3 0 000 6z'/%3E%3C/svg%3E"); }
+        .icon-gallery { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'/%3E%3C/svg%3E"); }
+        .icon-correct { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'/%3E%3C/svg%3E"); }
+        .icon-save { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4'/%3E%3C/svg%3E"); }
+        
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 24px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            background: #fafcff;
+            transition: all 0.2s;
+        }
+        .upload-area:active { background: #f1f5f9; }
+        .upload-icon {
+            width: 60px;
+            height: 60px;
+            background: #f1f5f9;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 28px;
+        }
+        
+        .preview-img { width: 100%; border-radius: 20px; margin: 16px 0; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .stat-value { font-size: 28px; font-weight: 800; color: #667eea; }
+        .stat-label { font-size: 12px; color: #64748b; margin-top: 4px; }
+        
+        .top-list { display: flex; flex-direction: column; gap: 12px; }
+        .top-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 18px;
+        }
+        .top-rank {
+            width: 36px;
+            height: 36px;
+            background: #e2e8f0;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+        }
+        .rank-1 { background: #fef3c7; color: #d97706; }
+        .rank-2 { background: #f1f5f9; color: #64748b; }
+        .rank-3 { background: #fef3c7; color: #b45309; }
+        .top-name { flex: 1; font-weight: 600; }
+        .top-score { font-weight: 800; color: #667eea; }
+        
+        /* Estilos para evaluaciones en tarjetas */
+        .evaluaciones-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .eval-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s;
+            border-left: 4px solid #667eea;
+        }
+        .eval-info {
+            flex: 1;
+        }
+        .eval-alumno {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+        .eval-fecha {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+        .eval-nota {
+            text-align: right;
+        }
+        .eval-puntaje {
+            font-size: 24px;
+            font-weight: 800;
+            color: #667eea;
+        }
+        .eval-estado {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 4px;
+        }
+        .estado-aprobado { background: #d1fae5; color: #065f46; }
+        .estado-desempeno { background: #fed7aa; color: #92400e; }
+        .estado-reprobado { background: #fee2e2; color: #991b1b; }
+        
+        /* Módulos y Exámenes */
+        .modulo-item, .examen-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .modulo-nombre, .examen-nombre { font-weight: 500; }
+        .modulo-desc, .examen-fecha { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+        
+        /* Alumnos */
+        .alumno-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .alumno-id { width: 40px; font-weight: 600; color: #64748b; }
+        .alumno-nombre { flex: 1; font-weight: 500; }
+        .alumno-correo { font-size: 12px; color: #94a3b8; max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+        
+        .result-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 28px;
+            padding: 24px;
+            color: white;
+            text-align: center;
+        }
+        .nota-circle {
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 60px;
+            margin: 0 auto 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .nota-value { font-size: 44px; font-weight: 800; }
+        .stats-row { display: flex; gap: 12px; margin: 20px 0; }
+        .stat-result {
+            flex: 1;
+            background: rgba(255,255,255,0.12);
+            border-radius: 18px;
+            padding: 12px;
+        }
+        .detalle-list {
+            background: rgba(255,255,255,0.08);
+            border-radius: 18px;
+            padding: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            text-align: left;
+        }
+        .detalle-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 12px;
+        }
+        
+        .loading { text-align: center; padding: 40px; }
+        .spinner {
+            width: 44px;
+            height: 44px;
+            border: 3px solid #e2e8f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            margin: 0 auto 16px;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .hidden { display: none; }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo-css">ES</div>
-            <h1>EduScan</h1>
-            <p>Corrector de examenes por IA</p>
-            <p class="small">Calificacion: 0.0 a 5.0</p>
-        </div>
+    <div class="header">
+        <h1>
+            <div class="logo">E</div>
+            EduScan
+        </h1>
+        <p>Corrector de examenes por Inteligencia Artificial</p>
+    </div>
 
-        <div class="select-alumno">
-            <label>Seleccionar Alumno:</label>
-            <select id="alumnoSelect">
-                <option value="">-- Seleccione un alumno --</option>
-            </select>
-        </div>
+    <div class="tabs">
+        <button class="tab active" data-tab="corrector">Corrector</button>
+        <button class="tab" data-tab="dashboard">Dashboard</button>
+    </div>
 
-        <div class="modos">
-            <button id="modoCamaraBtn" class="btn-modo active">Tomar Foto</button>
-            <button id="modoGaleriaBtn" class="btn-modo">Subir Imagen</button>
-        </div>
-
-        <div id="cameraContainer" style="display: none;">
-            <div class="video-container">
-                <video id="video" autoplay playsinline></video>
-                <canvas id="canvas" style="display: none;"></canvas>
+    <div class="content">
+        <!-- Panel Corrector -->
+        <div id="panel-corrector" class="panel active">
+            <div class="card">
+                <div class="card-title">Seleccionar Alumno</div>
+                <select id="alumnoSelect">
+                    <option value="">Cargando alumnos...</option>
+                </select>
             </div>
-            <div class="camera-buttons">
-                <button id="capturarBtn" class="btn-capturar">Capturar Examen</button>
-                <button id="cancelarCamaraBtn" class="btn-secundario">Cancelar</button>
-            </div>
-        </div>
 
-        <div id="uploadContainer">
-            <div class="upload-area" id="uploadArea">
-                <div class="upload-icon">���</div>
-                <p>Toca para seleccionar una foto del examen</p>
-                <input type="file" id="fileInput" accept="image/*" style="display: none">
-            </div>
-        </div>
-
-        <div id="previewContainer" style="display: none;">
-            <h3>Vista previa del examen:</h3>
-            <img id="preview" class="preview-img">
-            <div class="preview-buttons">
-                <button id="corregirBtn" class="btn-corregir">Corregir Examen</button>
-                <button id="cancelarBtn" class="btn-secundario">Cancelar</button>
-            </div>
-        </div>
-
-        <div id="resultados" style="display: none;" class="resultados">
-            <h2>Resultados del Examen</h2>
-            <div class="nota-circle">
-                <span id="notaValor">0.0</span>
-                <small>/ 5.0</small>
-            </div>
-            
-            <div class="stats">
-                <div class="stat correctas">
-                    <span class="stat-value" id="correctas">0</span>
-                    <span class="stat-label">Correctas</span>
-                </div>
-                <div class="stat incorrectas">
-                    <span class="stat-value" id="incorrectas">0</span>
-                    <span class="stat-label">Incorrectas</span>
+            <div class="card">
+                <div class="card-title">Capturar Examen</div>
+                <input type="file" id="camaraInput" accept="image/*" capture="environment" style="display:none">
+                <input type="file" id="galeriaInput" accept="image/*" style="display:none">
+                
+                <button id="btnCamara" class="btn btn-primary" style="margin-bottom:12px">
+                    <span class="icon icon-camera"></span>
+                    Abrir Camara
+                </button>
+                <button id="btnGaleria" class="btn btn-outline">
+                    <span class="icon icon-gallery"></span>
+                    Seleccionar de Galeria
+                </button>
+                
+                <div id="previewContainer" class="hidden">
+                    <img id="previewImg" class="preview-img">
+                    <button id="btnCorregir" class="btn btn-success">
+                        <span class="icon icon-correct"></span>
+                        Corregir Examen
+                    </button>
+                    <button id="btnCancelarPreview" class="btn btn-secondary">Cancelar</button>
                 </div>
             </div>
 
-            <div class="detalles">
-                <h3>Detalle por pregunta:</h3>
-                <div id="detalleLista"></div>
+            <div id="loadingPanel" class="hidden">
+                <div class="loading"><div class="spinner"></div><div>Procesando con IA...</div></div>
             </div>
 
-            <div class="resultados-buttons">
-                <button id="guardarBtn" class="btn-guardar">Guardar Calificacion</button>
-                <button id="nuevoBtn" class="btn-secundario">Corregir otro examen</button>
-                <a href="dashboard.html" class="btn-dashboard">Ver Dashboard</a>
+            <div id="resultadosPanel" class="hidden">
+                <div class="result-card">
+                    <div class="nota-circle">
+                        <span class="nota-value" id="notaValor">0.0</span>
+                        <span>/5.0</span>
+                    </div>
+                    <div class="stats-row">
+                        <div class="stat-result">
+                            <div class="nota-value" id="correctas" style="font-size:24px">0</div>
+                            <div>Correctas</div>
+                        </div>
+                        <div class="stat-result">
+                            <div class="nota-value" id="incorrectas" style="font-size:24px">0</div>
+                            <div>Incorrectas</div>
+                        </div>
+                    </div>
+                    <div class="detalle-list" id="detalleLista"></div>
+                    <button id="btnGuardar" class="btn btn-primary" style="margin-top:20px">
+                        <span class="icon icon-save"></span>
+                        Guardar Calificacion
+                    </button>
+                    <button id="btnNuevoExamen" class="btn btn-secondary" style="margin-top:10px">
+                        Corregir otro examen
+                    </button>
+                </div>
             </div>
         </div>
 
-        <div id="loading" style="display: none;" class="loading">
-            <div class="spinner"></div>
-            <p>Procesando con IA...</p>
+        <!-- Panel Dashboard -->
+        <div id="panel-dashboard" class="panel">
+            <div class="stats-grid" id="statsGrid"></div>
+            <div class="card"><div class="card-title">Top 5 Mejores Alumnos</div><div id="topAlumnosList"></div></div>
+            <div class="card"><div class="card-title">Ultimas Evaluaciones</div><div id="evaluacionesList"></div></div>
+            <div class="card"><div class="card-title">Modulos</div><div id="modulosList"></div></div>
+            <div class="card"><div class="card-title">Examenes</div><div id="examenesList"></div></div>
+            <div class="card"><div class="card-title">Lista de Alumnos</div><div id="alumnosList"></div></div>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        const IP = '192.168.1.36';
+        const API_URL = 'http://' + IP + ':8000';
+        const DB_API_URL = 'http://' + IP + ':8003';
+        
+        let imagenActual = null;
+        let respuestasCorreccion = null;
+        
+        // Tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.onclick = () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+                if(tab.dataset.tab === 'dashboard') cargarDashboardCompleto();
+            };
+        });
+        
+        async function cargarAlumnos() {
+            try {
+                const res = await fetch(DB_API_URL + '/alumnos');
+                const data = await res.json();
+                const select = document.getElementById('alumnoSelect');
+                select.innerHTML = '<option value="">Seleccionar alumno</option>';
+                if(data.alumnos) {
+                    data.alumnos.sort((a,b) => a.id_alumno - b.id_alumno);
+                    data.alumnos.forEach(a => {
+                        const option = document.createElement('option');
+                        option.value = a.id_alumno;
+                        option.textContent = a.nombre;
+                        select.appendChild(option);
+                    });
+                }
+            } catch(e) { console.error(e); }
+        }
+        
+        async function cargarDashboardCompleto() {
+            try {
+                // Estadísticas
+                const stats = await fetch(DB_API_URL + '/estadisticas').then(r => r.json());
+                document.getElementById('statsGrid').innerHTML = `
+                    <div class="stat-card"><div class="stat-value">${stats.total_alumnos||0}</div><div class="stat-label">Alumnos</div></div>
+                    <div class="stat-card"><div class="stat-value">${stats.total_evaluaciones||0}</div><div class="stat-label">Examenes</div></div>
+                    <div class="stat-card"><div class="stat-value">${stats.promedio_general||0}</div><div class="stat-label">Promedio</div></div>
+                    <div class="stat-card"><div class="stat-value">${stats.mejor_nota||0}</div><div class="stat-label">Mejor Nota</div></div>
+                `;
+                
+                // Top alumnos
+                const top = await fetch(DB_API_URL + '/top_alumnos').then(r => r.json());
+                if(top.top_alumnos && top.top_alumnos.length > 0) {
+                    document.getElementById('topAlumnosList').innerHTML = '<div class="top-list">' + top.top_alumnos.map((a,i)=>`
+                        <div class="top-item"><div class="top-rank rank-${i+1}">${i+1}</div><div class="top-name">${a.nombre}</div><div class="top-score">${a.promedio}</div></div>
+                    `).join('') + '</div>';
+                } else {
+                    document.getElementById('topAlumnosList').innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">No hay datos</div>';
+                }
+                
+                // Evaluaciones - Tarjetas bonitas
+                const evals = await fetch(DB_API_URL + '/evaluaciones').then(r => r.json());
+                if(evals.evaluaciones && evals.evaluaciones.length > 0) {
+                    const evaluacionesRecientes = [...evals.evaluaciones].reverse().slice(0,8);
+                    document.getElementById('evaluacionesList').innerHTML = '<div class="evaluaciones-list">' + evaluacionesRecientes.map(e => {
+                        let estadoClass = '';
+                        let estadoText = '';
+                        if(e.puntaje >= 4.0) {
+                            estadoClass = 'estado-aprobado';
+                            estadoText = 'Aprobado';
+                        } else if(e.puntaje >= 3.1) {
+                            estadoClass = 'estado-desempeno';
+                            estadoText = 'Desempeño Bajo';
+                        } else {
+                            estadoClass = 'estado-reprobado';
+                            estadoText = 'Reprobado';
+                        }
+                        return `
+                            <div class="eval-card">
+                                <div class="eval-info">
+                                    <div class="eval-alumno">${e.alumno}</div>
+                                    <div class="eval-fecha">${e.fecha}</div>
+                                </div>
+                                <div class="eval-nota">
+                                    <div class="eval-puntaje">${e.puntaje}</div>
+                                    <div class="eval-estado ${estadoClass}">${estadoText}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('') + '</div>';
+                } else {
+                    document.getElementById('evaluacionesList').innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">No hay evaluaciones</div>';
+                }
+                
+                // Módulos
+                const modulos = await fetch(DB_API_URL + '/modulos').then(r => r.json());
+                if(modulos.modulos && modulos.modulos.length > 0) {
+                    document.getElementById('modulosList').innerHTML = modulos.modulos.map(m => `
+                        <div class="modulo-item">
+                            <div><span class="modulo-nombre">${m.nombre}</span><div class="modulo-desc">${m.descripcion || 'Sin descripción'}</div></div>
+                            <div style="width:30px; height:30px; background:${m.color}; border-radius:8px;"></div>
+                        </div>
+                    `).join('');
+                } else {
+                    document.getElementById('modulosList').innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">No hay módulos</div>';
+                }
+                
+                // Exámenes
+                const examenes = await fetch(DB_API_URL + '/examenes').then(r => r.json());
+                if(examenes.examenes && examenes.examenes.length > 0) {
+                    const examenesOrdenados = [...examenes.examenes].sort((a,b) => a.id_examen - b.id_examen);
+                    document.getElementById('examenesList').innerHTML = examenesOrdenados.slice(0,8).map(e => `
+                        <div class="examen-item">
+                            <div><span class="examen-nombre">${e.nombre}</span><div class="examen-fecha">${e.modulo_nombre} - ${e.fecha}</div></div>
+                        </div>
+                    `).join('');
+                } else {
+                    document.getElementById('examenesList').innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">No hay exámenes</div>';
+                }
+                
+                // Alumnos
+                const alumnos = await fetch(DB_API_URL + '/alumnos').then(r => r.json());
+                if(alumnos.alumnos && alumnos.alumnos.length > 0) {
+                    const alumnosOrdenados = [...alumnos.alumnos].sort((a,b) => a.id_alumno - b.id_alumno);
+                    document.getElementById('alumnosList').innerHTML = alumnosOrdenados.map(a => `
+                        <div class="alumno-row">
+                            <div class="alumno-id">${a.id_alumno}</div>
+                            <div class="alumno-nombre">${a.nombre}</div>
+                            <div class="alumno-correo">${a.correo}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    document.getElementById('alumnosList').innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">No hay alumnos</div>';
+                }
+            } catch(e) { console.error('Error cargando dashboard:', e); }
+        }
+        
+        // Cámara y galería
+        const camaraInput = document.getElementById('camaraInput');
+        const galeriaInput = document.getElementById('galeriaInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewImg = document.getElementById('previewImg');
+        
+        document.getElementById('btnCamara').onclick = () => camaraInput.click();
+        document.getElementById('btnGaleria').onclick = () => galeriaInput.click();
+        
+        function procesarImagen(file) {
+            if(file) {
+                imagenActual = file;
+                previewImg.src = URL.createObjectURL(file);
+                previewContainer.classList.remove('hidden');
+            }
+        }
+        
+        camaraInput.onchange = (e) => procesarImagen(e.target.files[0]);
+        galeriaInput.onchange = (e) => procesarImagen(e.target.files[0]);
+        
+        document.getElementById('btnCancelarPreview').onclick = () => {
+            imagenActual = null;
+            previewContainer.classList.add('hidden');
+            camaraInput.value = '';
+            galeriaInput.value = '';
+        };
+        
+        document.getElementById('btnCorregir').onclick = async () => {
+            if(!imagenActual) { alert('Selecciona una imagen'); return; }
+            document.getElementById('loadingPanel').classList.remove('hidden');
+            previewContainer.classList.add('hidden');
+            
+            const formData = new FormData();
+            formData.append('file', imagenActual);
+            
+            try {
+                const response = await fetch(API_URL + '/corregir', { method: 'POST', body: formData });
+                const data = await response.json();
+                if(response.ok) {
+                    respuestasCorreccion = data;
+                    document.getElementById('notaValor').textContent = data.nota_final.toFixed(1);
+                    document.getElementById('correctas').textContent = data.correctas;
+                    document.getElementById('incorrectas').textContent = data.incorrectas;
+                    
+                    let html = '';
+                    data.respuestas_alumno.forEach((p, i) => {
+                        let estado = p >= 4.0 ? '✓' : (p >= 3.1 ? '⚠️' : '✗');
+                        let color = p >= 4.0 ? '#a7f3d0' : (p >= 3.1 ? '#fed7aa' : '#fecaca');
+                        html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.1); color:${color}">
+                            <span>Pregunta ${i+1}</span><span>${p.toFixed(1)}/5.0</span><span>${estado}</span>
+                        </div>`;
+                    });
+                    document.getElementById('detalleLista').innerHTML = html;
+                    document.getElementById('resultadosPanel').classList.remove('hidden');
+                } else { alert('Error: ' + JSON.stringify(data)); }
+            } catch(e) { alert('Error de conexion: ' + e.message); }
+            finally { document.getElementById('loadingPanel').classList.add('hidden'); }
+        };
+        
+        document.getElementById('btnGuardar').onclick = async () => {
+            const alumnoId = document.getElementById('alumnoSelect').value;
+            if(!alumnoId) { alert('Selecciona un alumno'); return; }
+            if(!respuestasCorreccion) { alert('Primero corrige un examen'); return; }
+            
+            const hoy = new Date().toISOString().split('T')[0];
+            const evaluacion = {
+                id_alumno: parseInt(alumnoId),
+                puntaje: respuestasCorreccion.nota_final,
+                fecha: hoy,
+                respuestas: respuestasCorreccion.respuestas_alumno.map((p, i) => ({ 
+                    id_pregunta: i+1, 
+                    es_correcta: p >= 4.0 
+                }))
+            };
+            
+            try {
+                const res = await fetch(DB_API_URL + '/nueva_evaluacion', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(evaluacion)
+                });
+                if(res.ok) {
+                    alert('Guardado correctamente');
+                    cargarDashboardCompleto();
+                    document.getElementById('btnNuevoExamen').click();
+                } else { alert('Error al guardar'); }
+            } catch(e) { alert('Error de conexion'); }
+        };
+        
+        document.getElementById('btnNuevoExamen').onclick = () => {
+            imagenActual = null;
+            respuestasCorreccion = null;
+            previewContainer.classList.add('hidden');
+            document.getElementById('resultadosPanel').classList.add('hidden');
+            camaraInput.value = '';
+            galeriaInput.value = '';
+        };
+        
+        cargarAlumnos();
+        cargarDashboardCompleto();
+    </script>
 </body>
 </html>
