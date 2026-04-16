@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduScan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+        }
+        h1 {
+            font-size: 4rem;
+            color: white;
+            margin-bottom: 20px;
+        }
+        .version-box {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        button {
+            background: white;
+            border: none;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>EduScan</h1>
+        <div class="version-box">
+            <h2 style="color:white;">Selecciona tu version</h2>
+            <button onclick="location.href='dashboard_pc.html'">Version PC</button>
+            <button onclick="location.href='dashboard_mobile.html'">Version Movil</button>
+        </div>
+        <div style="margin-top:20px">
+            <button onclick="location.href='dashboard_pc.html'" style="background:#4CAF50; color:white;">Dashboard PC</button>
+            <button onclick="location.href='dashboard_mobile.html'" style="background:#2196F3; color:white;">Dashboard Movil</button>
+        </div>
+    </div>
+</body>
+</html>
