@@ -1,12 +1,10 @@
+import os
+import asyncpg
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Optional
-import mysql.connector
-from mysql.connector import Error
 
 app = FastAPI()
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,154 +13,98 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configuración CORRECTA para tu MySQL
-DB_CONFIG = {
-    'host': 'localhost',
-    'port': 3306,
-    'database': 'evaluacion_ia',
-    'user': 'root',
-    'password': 'root'  # Tu contraseña
-}
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-def get_db_connection():
-    try:
-        connection = mysql.connector.connect(**DB_CONFIG)
-        return connection
-    except Error as e:
-        print(f"Error: {e}")
-        return None
+async def get_db():
+    return await asyncpg.connect(DATABASE_URL)
+
+@app.on_event("startup")
+async def startup():
+    conn = await get_db()
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS alumnos (
+            id_alumno SERIAL PRIMARY KEY,
+            nombre VARCHAR(100) NOT NULL,
+            correo VARCHAR(100) UNIQUE
+        )
+    """)
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS modulos (
+            id_modulo SERIAL PRIMARY KEY,
+            nombre VARCHAR(100) UNIQUE NOT NULL,
+            descripcion TEXT,
+            color VARCHAR(20)
+        )
+    """)
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS examenes (
+            id_examen SERIAL PRIMARY KEY,
+            nombre VARCHAR(100) NOT NULL,
+            id_modulo INT REFERENCES modulos(id_modulo),
+            fecha DATE,
+            total_preguntas INT
+        )
+    """)
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS pregunta (
+            id_pregunta SERIAL PRIMARY KEY,
+            descripcion TEXT,
+            respuesta_correcta VARCHAR(50)
+        )
+    """)
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS evaluacion (
+            id_evaluacion SERIAL PRIMARY KEY,
+            id_alumno INT REFERENCES alumnos(id_alumno),
+            puntaje DECIMAL(5,2),
+            fecha DATE
+        )
+    """)
+    await conn.close()
 
 @app.get("/health")
 async def health():
-    conn = get_db_connection()
-    if conn and conn.is_connected():
-        conn.close()
-        return {"status": "healthy", "database": "connected", "message": "MySQL conectado correctamente"}
-    return {"status": "unhealthy", "database": "disconnected", "error": "No se pudo conectar a MySQL"}
+    return {"status": "healthy"}
 
 @app.get("/alumnos")
 async def get_alumnos():
-    conn = get_db_connection()
-    if not conn:
-        raise HTTPException(status_code=500, detail="Error de conexion a MySQL")
-    
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT id_alumno, nombre, correo FROM alumnos")
-    alumnos = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    
-    return {"alumnos": alumnos}
+    conn = await get_db()
+    rows = await conn.fetch("SELECT id_alumno, nombre, correo FROM alumnos ORDER BY id_alumno")
+    await conn.close()
+    return {"alumnos": [dict(row) for row in rows]}
 
-@app.get("/evaluaciones")
-async def get_evaluaciones():
-    conn = get_db_connection()
-    if not conn:
-        raise HTTPException(status_code=500, detail="Error de conexion")
-    
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("""
-        SELECT e.id_evaluacion, a.nombre as alumno, e.puntaje, e.fecha
-        FROM evaluacion e
-        JOIN alumnos a ON e.id_alumno = a.id_alumno
-        ORDER BY e.fecha DESC
+@app.get("/modulos")
+async def get_modulos():
+    conn = await get_db()
+    rows = await conn.fetch("SELECT id_modulo, nombre, descripcion, color FROM modulos ORDER BY id_modulo")
+    await conn.close()
+    return {"modulos": [dict(row) for row in rows]}
+
+@app.get("/examenes")
+async def get_examenes():
+    conn = await get_db()
+    rows = await conn.fetch("""
+        SELECT e.id_examen, e.nombre, e.fecha, e.total_preguntas, m.nombre as modulo_nombre
+        FROM examenes e
+        JOIN modulos m ON e.id_modulo = m.id_modulo
+        ORDER BY e.id_examen
     """)
-    
-    evaluaciones = cursor.fetchall()
-    for ev in evaluaciones:
-        if ev['fecha']:
-            ev['fecha'] = str(ev['fecha'])
-    
-    cursor.close()
-    conn.close()
-    
-    return {"evaluaciones": evaluaciones}
+    await conn.close()
+    return {"examenes": [dict(row) for row in rows]}
 
-@app.get("/dashboard/resumen")
-async def dashboard_resumen():
-    conn = get_db_connection()
-    if not conn:
-        raise HTTPException(status_code=500, detail="Error de conexion")
-    
-    cursor = conn.cursor(dictionary=True)
-    
-    cursor.execute("SELECT COUNT(*) as total FROM alumnos")
-    total_alumnos = cursor.fetchone()['total']
-    
-    cursor.execute("SELECT COUNT(*) as total FROM evaluacion")
-    total_evaluaciones = cursor.fetchone()['total']
-    
-    cursor.execute("SELECT AVG(puntaje) as promedio FROM evaluacion")
-    promedio = cursor.fetchone()['promedio'] or 0
-    
-    cursor.execute("SELECT MAX(puntaje) as mejor FROM evaluacion")
-    mejor_nota = cursor.fetchone()['mejor'] or 0
-    
-    cursor.execute("""
-        SELECT a.nombre, AVG(e.puntaje) as promedio
-        FROM alumnos a
-        JOIN evaluacion e ON a.id_alumno = e.id_alumno
-        GROUP BY a.id_alumno
-        ORDER BY promedio DESC
-        LIMIT 5
-    """)
-    top_alumnos = cursor.fetchall()
-    for t in top_alumnos:
-        t['promedio'] = round(t['promedio'], 2)
-    
-    cursor.close()
-    conn.close()
-    
+@app.get("/estadisticas")
+async def get_estadisticas():
+    conn = await get_db()
+    total_alumnos = await conn.fetchval("SELECT COUNT(*) FROM alumnos")
+    total_evaluaciones = await conn.fetchval("SELECT COUNT(*) FROM evaluacion") or 0
+    promedio = await conn.fetchval("SELECT AVG(puntaje) FROM evaluacion") or 0
+    mejor = await conn.fetchval("SELECT MAX(puntaje) FROM evaluacion") or 0
+    await conn.close()
     return {
-        "estadisticas": {
-            "total_alumnos": total_alumnos,
-            "total_evaluaciones": total_evaluaciones,
-            "promedio_general": round(promedio, 2),
-            "mejor_nota": round(mejor_nota, 2)
-        },
-        "top_alumnos": top_alumnos
-    }
-
-@app.get("/alumno/{alumno_id}/detalle")
-async def alumno_detalle(alumno_id: int):
-    conn = get_db_connection()
-    if not conn:
-        raise HTTPException(status_code=500, detail="Error de conexion")
-    
-    cursor = conn.cursor(dictionary=True)
-    
-    cursor.execute("SELECT id_alumno, nombre, correo FROM alumnos WHERE id_alumno = %s", (alumno_id,))
-    alumno = cursor.fetchone()
-    
-    if not alumno:
-        raise HTTPException(status_code=404, detail="Alumno no encontrado")
-    
-    cursor.execute("""
-        SELECT id_evaluacion, puntaje, fecha 
-        FROM evaluacion 
-        WHERE id_alumno = %s 
-        ORDER BY fecha DESC
-    """, (alumno_id,))
-    
-    evaluaciones = cursor.fetchall()
-    for ev in evaluaciones:
-        ev['fecha'] = str(ev['fecha'])
-    
-    cursor.execute("""
-        SELECT AVG(puntaje) as promedio, COUNT(*) as total 
-        FROM evaluacion 
-        WHERE id_alumno = %s
-    """, (alumno_id,))
-    stats = cursor.fetchone()
-    
-    cursor.close()
-    conn.close()
-    
-    return {
-        "alumno": alumno,
-        "evaluaciones": evaluaciones,
-        "promedio": round(stats['promedio'], 2) if stats['promedio'] else 0,
-        "total_evaluaciones": stats['total'] or 0
+        "total_alumnos": total_alumnos,
+        "total_evaluaciones": total_evaluaciones,
+        "promedio_general": round(promedio, 2),
+        "mejor_nota": round(mejor, 2)
     }
 
 if __name__ == "__main__":
