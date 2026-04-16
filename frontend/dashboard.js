@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:8003';
+const API_URL = 'https://eduscan-database.onrender.com';
 
 let topAlumnosChart = null;
 let evolucionChart = null;

@@ -384,8 +384,8 @@
                     </div>
                     <div class="student-score ${scoreClass}">${student.score}%</div>
                     <div class="action-buttons">
-                        <button class="btn-edit" onclick="editStudent(${student.id})">‚úèÔ∏è</button>
-                        <button class="btn-delete" onclick="deleteStudent(${student.id})">Ì∑ëÔ∏è</button>
+                        <button class="btn-edit" onclick="editStudent(${student.id})"><i class="fas fa-edit"></i></button>
+                        <button class="btn-delete" onclick="deleteStudent(${student.id})"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
             `;
@@ -406,8 +406,8 @@
                     <div class="exam-date">üìÖ ${exam.date} ‚Ä¢ ${exam.grade}¬∞ ‚Ä¢ ${exam.subject}</div>
                 </div>
                 <div class="action-buttons">
-                    <button class="btn-edit" onclick="editExam(${exam.id})">‚úèÔ∏è</button>
-                    <button class="btn-delete" onclick="deleteExam(${exam.id})">Ì∑ëÔ∏è</button>
+                    <button class="btn-edit" onclick="editExam(${exam.id})"><i class="fas fa-edit"></i></button>
+                    <button class="btn-delete" onclick="deleteExam(${exam.id})"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
         `).join('');
