@@ -1,11 +1,21 @@
+# backend/main.py
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
-import mysql.connector
+from typing import Optional
+import os
+import sys
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
-app = FastAPI()
+# Agregar el directorio actual al path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# ✅ CORS (OBLIGATORIO para tu dashboard)
+app = FastAPI(title="EduScan API", version="3.0.0")
+
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,199 +24,305 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---------------- DB ----------------
+# ============================================
+# CONEXIÓN A BASE DE DATOS
+# ============================================
+
+DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/eduscan')
 
 def get_db():
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="root",
-        database="evaluacion_ia"
-    )
+    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
-# ---------------- MODELOS ----------------
+# ============================================
+# MODELOS
+# ============================================
 
 class Alumno(BaseModel):
     nombre: str
     correo: str
+    grado: int
+    calificacion: Optional[float] = 0
 
 class Modulo(BaseModel):
     nombre: str
-    descripcion: str = ""
-    color: str = "#3b82f6"
+    descripcion: Optional[str] = ""
+    color: Optional[str] = "#3b82f6"
+    grado: int
 
 class Examen(BaseModel):
     nombre: str
     id_modulo: int
+    grado: int
     fecha: str
+    qr_code: Optional[str] = None
 
-# ---------------- ESTADISTICAS (🔥 LO QUE TE FALTABA) ----------------
+# ============================================
+# ENDPOINTS - ALUMNOS
+# ============================================
 
-@app.get("/estadisticas")
-def estadisticas():
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-
-    # Total alumnos
-    cursor.execute("SELECT COUNT(*) as total FROM alumnos")
-    total_alumnos = cursor.fetchone()["total"]
-
-    # Total examenes
-    cursor.execute("SELECT COUNT(*) as total FROM examenes")
-    total_examenes = cursor.fetchone()["total"]
-
-    # Promedio notas (si tienes tabla evaluaciones)
-    try:
-        cursor.execute("SELECT AVG(puntaje) as promedio FROM evaluaciones")
-        promedio = cursor.fetchone()["promedio"] or 0
-
-        cursor.execute("SELECT MAX(puntaje) as maximo FROM evaluaciones")
-        maximo = cursor.fetchone()["maximo"] or 0
-    except:
-        promedio = 0
-        maximo = 0
-
-    db.close()
-
-    return {
-        "total_alumnos": total_alumnos,
-        "total_evaluaciones": total_examenes,
-        "promedio_general": round(promedio, 2),
-        "mejor_nota": maximo
-    }
-
-# ---------------- ALUMNOS ----------------
-
-@app.get("/alumnos")
+@app.get("/api/alumnos")
 def get_alumnos():
     db = get_db()
-    cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM alumnos")
-    data = cursor.fetchall()
+    cur = db.cursor()
+    cur.execute("SELECT * FROM alumnos ORDER BY calificacion DESC")
+    alumnos = cur.fetchall()
+    cur.close()
     db.close()
-    return {"alumnos": data}
+    return {"alumnos": alumnos}
 
-@app.post("/alumnos")
+@app.get("/api/alumnos/{id_alumno}")
+def get_alumno(id_alumno: int):
+    db = get_db()
+    cur = db.cursor()
+    cur.execute("SELECT * FROM alumnos WHERE id_alumno = %s", (id_alumno,))
+    alumno = cur.fetchone()
+    cur.close()
+    db.close()
+    if not alumno:
+        raise HTTPException(status_code=404, detail="Alumno no encontrado")
+    return alumno
+
+@app.post("/api/alumnos")
 def crear_alumno(alumno: Alumno):
     db = get_db()
-    cursor = db.cursor()
-    cursor.execute(
-        "INSERT INTO alumnos (nombre, correo) VALUES (%s,%s)",
-        (alumno.nombre, alumno.correo)
+    cur = db.cursor()
+    cur.execute(
+        """INSERT INTO alumnos (nombre, correo, grado, calificacion) 
+           VALUES (%s, %s, %s, %s) RETURNING *""",
+        (alumno.nombre, alumno.correo, alumno.grado, alumno.calificacion)
     )
+    nuevo = cur.fetchone()
     db.commit()
+    cur.close()
     db.close()
-    return {"msg": "ok"}
+    return nuevo
 
-@app.put("/alumnos/{id}")
-def editar_alumno(id: int, alumno: Alumno):
+@app.put("/api/alumnos/{id_alumno}")
+def editar_alumno(id_alumno: int, alumno: Alumno):
     db = get_db()
-    cursor = db.cursor()
-    cursor.execute(
-        "UPDATE alumnos SET nombre=%s, correo=%s WHERE id_alumno=%s",
-        (alumno.nombre, alumno.correo, id)
+    cur = db.cursor()
+    cur.execute(
+        """UPDATE alumnos 
+           SET nombre=%s, correo=%s, grado=%s, calificacion=%s 
+           WHERE id_alumno=%s RETURNING *""",
+        (alumno.nombre, alumno.correo, alumno.grado, alumno.calificacion, id_alumno)
     )
+    actualizado = cur.fetchone()
     db.commit()
+    cur.close()
     db.close()
-    return {"msg": "ok"}
+    if not actualizado:
+        raise HTTPException(status_code=404, detail="Alumno no encontrado")
+    return actualizado
 
-@app.delete("/alumnos/{id}")
-def eliminar_alumno(id: int):
+@app.delete("/api/alumnos/{id_alumno}")
+def eliminar_alumno(id_alumno: int):
     db = get_db()
-    cursor = db.cursor()
-    cursor.execute("DELETE FROM alumnos WHERE id_alumno=%s", (id,))
+    cur = db.cursor()
+    cur.execute("DELETE FROM alumnos WHERE id_alumno = %s RETURNING id_alumno", (id_alumno,))
+    eliminado = cur.fetchone()
     db.commit()
+    cur.close()
     db.close()
-    return {"msg": "ok"}
+    if not eliminado:
+        raise HTTPException(status_code=404, detail="Alumno no encontrado")
+    return {"msg": "Alumno eliminado"}
 
-# ---------------- MODULOS ----------------
+# ============================================
+# ENDPOINTS - MÓDULOS
+# ============================================
 
-@app.get("/modulos")
+@app.get("/api/modulos")
 def get_modulos():
     db = get_db()
-    cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM modulos")
-    data = cursor.fetchall()
+    cur = db.cursor()
+    cur.execute("SELECT * FROM modulos ORDER BY grado, nombre")
+    modulos = cur.fetchall()
+    cur.close()
     db.close()
-    return {"modulos": data}
+    return {"modulos": modulos}
 
-@app.post("/modulos")
+@app.post("/api/modulos")
 def crear_modulo(modulo: Modulo):
     db = get_db()
-    cursor = db.cursor()
-    cursor.execute(
-        "INSERT INTO modulos (nombre, descripcion, color) VALUES (%s,%s,%s)",
-        (modulo.nombre, modulo.descripcion, modulo.color)
+    cur = db.cursor()
+    cur.execute(
+        """INSERT INTO modulos (nombre, descripcion, color, grado) 
+           VALUES (%s, %s, %s, %s) RETURNING *""",
+        (modulo.nombre, modulo.descripcion, modulo.color, modulo.grado)
     )
+    nuevo = cur.fetchone()
     db.commit()
+    cur.close()
     db.close()
-    return {"msg": "ok"}
+    return nuevo
 
-@app.put("/modulos/{id}")
-def editar_modulo(id: int, modulo: Modulo):
+@app.put("/api/modulos/{id_modulo}")
+def editar_modulo(id_modulo: int, modulo: Modulo):
     db = get_db()
-    cursor = db.cursor()
-    cursor.execute(
-        "UPDATE modulos SET nombre=%s, descripcion=%s, color=%s WHERE id_modulo=%s",
-        (modulo.nombre, modulo.descripcion, modulo.color, id)
+    cur = db.cursor()
+    cur.execute(
+        """UPDATE modulos 
+           SET nombre=%s, descripcion=%s, color=%s, grado=%s 
+           WHERE id_modulo=%s RETURNING *""",
+        (modulo.nombre, modulo.descripcion, modulo.color, modulo.grado, id_modulo)
     )
+    actualizado = cur.fetchone()
     db.commit()
+    cur.close()
     db.close()
-    return {"msg": "ok"}
+    return actualizado
 
-@app.delete("/modulos/{id}")
-def eliminar_modulo(id: int):
+@app.delete("/api/modulos/{id_modulo}")
+def eliminar_modulo(id_modulo: int):
     db = get_db()
-    cursor = db.cursor()
-    cursor.execute("DELETE FROM modulos WHERE id_modulo=%s", (id,))
+    cur = db.cursor()
+    cur.execute("DELETE FROM modulos WHERE id_modulo = %s RETURNING id_modulo", (id_modulo,))
+    eliminado = cur.fetchone()
     db.commit()
+    cur.close()
     db.close()
-    return {"msg": "ok"}
+    return {"msg": "Módulo eliminado"}
 
-# ---------------- EXAMENES ----------------
+# ============================================
+# ENDPOINTS - EXÁMENES
+# ============================================
 
-@app.get("/examenes")
+@app.get("/api/examenes")
 def get_examenes():
     db = get_db()
-    cursor = db.cursor(dictionary=True)
-    cursor.execute("""
+    cur = db.cursor()
+    cur.execute("""
         SELECT e.*, m.nombre as modulo_nombre
         FROM examenes e
         JOIN modulos m ON e.id_modulo = m.id_modulo
+        ORDER BY e.fecha DESC
     """)
-    data = cursor.fetchall()
+    examenes = cur.fetchall()
+    cur.close()
     db.close()
-    return {"examenes": data}
+    return {"examenes": examenes}
 
-@app.post("/examenes")
+@app.post("/api/examenes")
 def crear_examen(examen: Examen):
     db = get_db()
-    cursor = db.cursor()
-    cursor.execute(
-        "INSERT INTO examenes (nombre, id_modulo, fecha) VALUES (%s,%s,%s)",
-        (examen.nombre, examen.id_modulo, examen.fecha)
+    cur = db.cursor()
+    qr_code = examen.qr_code or f"EXAM-{hash(examen.nombre) % 1000:03d}"
+    cur.execute(
+        """INSERT INTO examenes (nombre, id_modulo, grado, fecha, qr_code) 
+           VALUES (%s, %s, %s, %s, %s) RETURNING *""",
+        (examen.nombre, examen.id_modulo, examen.grado, examen.fecha, qr_code)
     )
+    nuevo = cur.fetchone()
     db.commit()
+    cur.close()
     db.close()
-    return {"msg": "ok"}
+    return nuevo
 
-@app.put("/examenes/{id}")
-def editar_examen(id: int, examen: Examen):
+@app.delete("/api/examenes/{id_examen}")
+def eliminar_examen(id_examen: int):
     db = get_db()
-    cursor = db.cursor()
-    cursor.execute(
-        "UPDATE examenes SET nombre=%s, id_modulo=%s, fecha=%s WHERE id_examen=%s",
-        (examen.nombre, examen.id_modulo, examen.fecha, id)
-    )
+    cur = db.cursor()
+    cur.execute("DELETE FROM examenes WHERE id_examen = %s RETURNING id_examen", (id_examen,))
+    eliminado = cur.fetchone()
     db.commit()
+    cur.close()
     db.close()
-    return {"msg": "ok"}
+    return {"msg": "Examen eliminado"}
 
-@app.delete("/examenes/{id}")
-def eliminar_examen(id: int):
+# ============================================
+# ENDPOINTS - ESTADÍSTICAS
+# ============================================
+
+@app.get("/api/estadisticas")
+def get_estadisticas():
     db = get_db()
-    cursor = db.cursor()
-    cursor.execute("DELETE FROM examenes WHERE id_examen=%s", (id,))
-    db.commit()
+    cur = db.cursor()
+    cur.execute("SELECT COUNT(*) as total FROM alumnos")
+    total_alumnos = cur.fetchone()["total"]
+    cur.execute("SELECT COUNT(*) as total FROM examenes")
+    total_examenes = cur.fetchone()["total"]
+    cur.execute("SELECT AVG(calificacion) as promedio FROM alumnos")
+    promedio = cur.fetchone()["promedio"] or 0
+    cur.execute("SELECT MAX(calificacion) as maximo FROM alumnos")
+    maximo = cur.fetchone()["maximo"] or 0
+    cur.close()
     db.close()
-    return {"msg": "ok"}
+    return {
+        "total_alumnos": total_alumnos,
+        "total_examenes": total_examenes,
+        "promedio_general": round(float(promedio), 2),
+        "mejor_nota": float(maximo)
+    }
+
+# ============================================
+# SERVIR FRONTEND (ARCHIVOS HTML)
+# IMPORTANTE: La carpeta frontend está en la raíz, no dentro de backend
+# ============================================
+
+# La ruta a la carpeta frontend (un nivel arriba de backend)
+FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
+
+@app.get("/")
+async def serve_frontend():
+    """Servir el dashboard principal"""
+    
+    # Verificar si la carpeta frontend existe
+    if not os.path.exists(FRONTEND_DIR):
+        return {
+            "message": "EduScan API funcionando",
+            "status": "online",
+            "error": f"No se encontró la carpeta frontend en: {FRONTEND_DIR}",
+            "current_directory": os.getcwd(),
+            "files": os.listdir(os.getcwd())
+        }
+    
+    # Lista de posibles archivos a servir
+    files_to_try = [
+        "dashboard_mobile.html",
+        "index.html",
+        "dashboard_pc.html",
+        "dashboard.html"
+    ]
+    
+    for filename in files_to_try:
+        filepath = os.path.join(FRONTEND_DIR, filename)
+        if os.path.exists(filepath):
+            return FileResponse(filepath)
+    
+    # Si no hay archivos HTML, mostrar lista de archivos disponibles
+    return {
+        "message": "No se encontró ningún archivo HTML",
+        "frontend_files": os.listdir(FRONTEND_DIR),
+        "suggested_endpoints": {
+            "GET /api/alumnos": "Lista de alumnos",
+            "GET /api/modulos": "Lista de módulos",
+            "GET /api/examenes": "Lista de exámenes",
+            "GET /api/estadisticas": "Estadísticas",
+            "GET /docs": "Documentación Swagger"
+        }
+    }
+
+# Servir archivos estáticos (CSS, JS, imágenes)
+if os.path.exists(FRONTEND_DIR):
+    app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+
+# ============================================
+# HEALTH CHECK
+# ============================================
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "service": "EduScan API", "version": "3.0"}
+
+@app.get("/api")
+def api_info():
+    return {
+        "message": "EduScan API",
+        "endpoints": [
+            "/api/alumnos",
+            "/api/modulos", 
+            "/api/examenes",
+            "/api/estadisticas"
+        ]
+    }
