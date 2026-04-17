@@ -3,29 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduScan - Dashboard</title>
+    <title>EduScan - Dashboard Completo</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%);
+            background: #f1f5f9;
             min-height: 100vh;
             padding: 20px;
         }
-        .container { max-width: 1200px; margin: 0 auto; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        /* Header */
         .header {
-            background: white;
+            background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%);
             border-radius: 24px;
             padding: 24px;
             margin-bottom: 24px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            color: white;
         }
-        h1 { color: #4f46e5; margin-bottom: 8px; }
-        p { color: #64748b; }
-        .stats {
+        .header h1 { font-size: 1.8rem; margin-bottom: 8px; }
+        .header p { opacity: 0.8; }
+        
+        /* Pestañas */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 12px 24px;
+            background: white;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+        
+        /* Tarjetas de estadísticas */
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -34,26 +59,32 @@
             border-radius: 20px;
             padding: 20px;
             text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         .stat-card h3 { color: #64748b; font-size: 0.85rem; margin-bottom: 8px; }
-        .stat-card .value { font-size: 2.5rem; font-weight: 800; color: #4f46e5; }
+        .stat-card .value { font-size: 2rem; font-weight: 800; color: #4f46e5; }
+        
+        /* Tablas */
         .table-container {
             background: white;
             border-radius: 20px;
             overflow: hidden;
             margin-bottom: 24px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         .table-header {
             padding: 16px 20px;
             background: #f8fafc;
             font-weight: 600;
             border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e2e8f0; }
         th { background: #f8fafc; font-weight: 600; }
+        
         .badge {
             padding: 4px 10px;
             border-radius: 40px;
@@ -64,172 +95,502 @@
         .badge-good { background: #dbeafe; color: #1e40af; }
         .badge-average { background: #fed7aa; color: #9a3412; }
         .badge-low { background: #fee2e2; color: #991b1b; }
+        
         .btn {
-            padding: 10px 20px;
-            background: #4f46e5;
-            color: white;
-            border: none;
+            padding: 8px 16px;
             border-radius: 40px;
+            border: none;
             cursor: pointer;
             font-weight: 500;
-            margin-top: 10px;
         }
-        .btn:hover { background: #4338ca; }
+        .btn-primary { background: #4f46e5; color: white; }
+        .btn-secondary { background: #e2e8f0; color: #475569; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .progress-bar {
+            background: #e2e8f0;
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            height: 100%;
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>��� EduScan Dashboard</h1>
-            <p>Gestión académica - Datos guardados localmente</p>
+            <h1>EduScan - Panel de Control</h1>
+            <p>Gestion de alumnos, modulos, examenes y calificaciones</p>
         </div>
 
-        <div class="stats" id="stats">
-            <div class="stat-card"><h3>Total Alumnos</h3><div class="value" id="totalStudents">0</div></div>
-            <div class="stat-card"><h3>Promedio General</h3><div class="value" id="avgGrade">0</div></div>
-            <div class="stat-card"><h3>Aprobados</h3><div class="value" id="passedCount">0</div></div>
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+            <button class="tab-btn" data-tab="alumnos">Alumnos</button>
+            <button class="tab-btn" data-tab="modulos">Modulos</button>
+            <button class="tab-btn" data-tab="examenes">Examenes</button>
+            <button class="tab-btn" data-tab="calificaciones">Calificaciones</button>
         </div>
 
-        <div class="table-container">
-            <div class="table-header">��� Cuadro de Honor</div>
-            <table id="honorTable">
-                <thead><tr><th>#</th><th>Nombre</th><th>Grado</th><th>Calificación</th></tr></thead>
-                <tbody></tbody>
-            </table>
+        <!-- Tab Dashboard -->
+        <div id="tab-dashboard" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card"><h3>Total Alumnos</h3><div class="value" id="totalAlumnos">0</div></div>
+                <div class="stat-card"><h3>Total Modulos</h3><div class="value" id="totalModulos">0</div></div>
+                <div class="stat-card"><h3>Total Examenes</h3><div class="value" id="totalExamenes">0</div></div>
+                <div class="stat-card"><h3>Promedio General</h3><div class="value" id="promedioGeneral">0</div></div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">Cuadro de Honor</div>
+                <table id="honorTable">
+                    <thead><tr><th>#</th><th>Nombre</th><th>Grado</th><th>Promedio</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">Progreso por Grado</div>
+                <div id="progresoGrados"></div>
+            </div>
         </div>
 
-        <div class="table-container">
-            <div class="table-header">��� Lista de Alumnos</div>
-            <table id="studentsTable">
-                <thead><tr><th>ID</th><th>Nombre</th><th>Grado</th><th>Calificación</th><th>Acciones</th></tr></thead>
-                <tbody></tbody>
-            </table>
+        <!-- Tab Alumnos -->
+        <div id="tab-alumnos" class="tab-content">
+            <div class="table-container">
+                <div class="table-header">
+                    <span>Lista de Alumnos</span>
+                    <button class="btn btn-primary" onclick="agregarAlumno()">+ Agregar</button>
+                </div>
+                <table id="alumnosTable">
+                    <thead><tr><th>ID</th><th>Nombre</th><th>Grado</th><th>Promedio</th><th>Acciones</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
 
-        <button class="btn" onclick="agregarAlumno()">+ Agregar Alumno</button>
+        <!-- Tab Modulos -->
+        <div id="tab-modulos" class="tab-content">
+            <div class="table-container">
+                <div class="table-header">
+                    <span>Modulos por Grado</span>
+                    <button class="btn btn-primary" onclick="agregarModulo()">+ Agregar</button>
+                </div>
+                <div id="modulosList"></div>
+            </div>
+        </div>
+
+        <!-- Tab Examenes -->
+        <div id="tab-examenes" class="tab-content">
+            <div class="table-container">
+                <div class="table-header">
+                    <span>Examenes</span>
+                    <button class="btn btn-primary" onclick="agregarExamen()">+ Agregar</button>
+                </div>
+                <table id="examenesTable">
+                    <thead><tr><th>ID</th><th>Titulo</th><th>Modulo</th><th>Grado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab Calificaciones -->
+        <div id="tab-calificaciones" class="tab-content">
+            <div class="table-container">
+                <div class="table-header">Calificaciones por Alumno</div>
+                <select id="selectAlumnoCalif" class="btn-secondary" style="padding: 8px 16px; margin: 10px;">
+                    <option value="">Seleccionar alumno</option>
+                </select>
+                <table id="calificacionesTable">
+                    <thead><tr><th>Examen</th><th>Nota</th><th>Fecha</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
-        // DATOS DE EJEMPLO - 15 ALUMNOS
-        let students = [
-            { id: 1, name: "Valentina Rojas", grade: 11, score: 98 },
-            { id: 2, name: "Mateo Herrera", grade: 10, score: 85 },
-            { id: 3, name: "Sofía Ramírez", grade: 11, score: 96 },
-            { id: 4, name: "Lucas Mendoza", grade: 9, score: 72 },
-            { id: 5, name: "Isabella Torres", grade: 11, score: 100 },
-            { id: 6, name: "Samuel Gómez", grade: 8, score: 78 },
-            { id: 7, name: "Camila Ortiz", grade: 10, score: 92 },
-            { id: 8, name: "Diego Fernández", grade: 7, score: 68 },
-            { id: 9, name: "Lucía Méndez", grade: 9, score: 88 },
-            { id: 10, name: "Javier Castro", grade: 6, score: 75 },
-            { id: 11, name: "Daniela Paz", grade: 5, score: 82 },
-            { id: 12, name: "Andrés Silva", grade: 4, score: 71 },
-            { id: 13, name: "Carolina Reyes", grade: 3, score: 94 },
-            { id: 14, name: "Felipe Muñoz", grade: 2, score: 67 },
-            { id: 15, name: "Natalia Herrera", grade: 1, score: 89 }
+        // ============================================
+        // DATOS DE EJEMPLO
+        // ============================================
+        
+        // Alumnos (15 alumnos)
+        let alumnos = [
+            { id: 1, nombre: "Valentina Rojas", grado: 11, promedio: 98 },
+            { id: 2, nombre: "Mateo Herrera", grado: 10, promedio: 85 },
+            { id: 3, nombre: "Sofia Ramirez", grado: 11, promedio: 96 },
+            { id: 4, nombre: "Lucas Mendoza", grado: 9, promedio: 72 },
+            { id: 5, nombre: "Isabella Torres", grado: 11, promedio: 100 },
+            { id: 6, nombre: "Samuel Gomez", grado: 8, promedio: 78 },
+            { id: 7, nombre: "Camila Ortiz", grado: 10, promedio: 92 },
+            { id: 8, nombre: "Diego Fernandez", grado: 7, promedio: 68 },
+            { id: 9, nombre: "Lucia Mendez", grado: 9, promedio: 88 },
+            { id: 10, nombre: "Javier Castro", grado: 6, promedio: 75 },
+            { id: 11, nombre: "Daniela Paz", grado: 5, promedio: 82 },
+            { id: 12, nombre: "Andres Silva", grado: 4, promedio: 71 },
+            { id: 13, nombre: "Carolina Reyes", grado: 3, promedio: 94 },
+            { id: 14, nombre: "Felipe Munoz", grado: 2, promedio: 67 },
+            { id: 15, nombre: "Natalia Herrera", grado: 1, promedio: 89 }
         ];
-
-        // Guardar en localStorage
-        function saveToLocalStorage() {
-            localStorage.setItem('eduscan_students_nube', JSON.stringify(students));
+        
+        // Modulos por grado
+        let modulos = [
+            { id: 1, nombre: "Matematicas", grado: 11, descripcion: "Algebra y calculo" },
+            { id: 2, nombre: "Espanol", grado: 11, descripcion: "Literatura" },
+            { id: 3, nombre: "Ciencias", grado: 10, descripcion: "Biologia y quimica" },
+            { id: 4, nombre: "Historia", grado: 9, descripcion: "Historia de Colombia" },
+            { id: 5, nombre: "Ingles", grado: 10, descripcion: "Ingles tecnico" },
+            { id: 6, nombre: "Fisica", grado: 11, descripcion: "Fisica general" },
+            { id: 7, nombre: "Artes", grado: 8, descripcion: "Educacion artistica" },
+            { id: 8, nombre: "Educacion Fisica", grado: 8, descripcion: "Deportes" }
+        ];
+        
+        // Examenes
+        let examenes = [
+            { id: 1, titulo: "Examen Parcial Matematicas", id_modulo: 1, grado: 11, fecha: "2024-03-15" },
+            { id: 2, titulo: "Examen Historia", id_modulo: 4, grado: 9, fecha: "2024-03-18" },
+            { id: 3, titulo: "Evaluacion Ingles", id_modulo: 5, grado: 10, fecha: "2024-03-20" },
+            { id: 4, titulo: "Examen Ciencias", id_modulo: 3, grado: 10, fecha: "2024-03-22" }
+        ];
+        
+        // Calificaciones (alumno, examen, nota)
+        let calificaciones = [
+            { id_alumno: 1, id_examen: 1, nota: 95, fecha: "2024-03-15" },
+            { id_alumno: 1, id_examen: 2, nota: 88, fecha: "2024-03-18" },
+            { id_alumno: 2, id_examen: 1, nota: 82, fecha: "2024-03-15" },
+            { id_alumno: 3, id_examen: 1, nota: 98, fecha: "2024-03-15" },
+            { id_alumno: 4, id_examen: 2, nota: 70, fecha: "2024-03-18" },
+            { id_alumno: 5, id_examen: 1, nota: 100, fecha: "2024-03-15" },
+            { id_alumno: 6, id_examen: 3, nota: 78, fecha: "2024-03-20" },
+            { id_alumno: 7, id_examen: 3, nota: 92, fecha: "2024-03-20" }
+        ];
+        
+        // ============================================
+        // FUNCIONES DE GUARDADO
+        // ============================================
+        
+        function guardarTodo() {
+            localStorage.setItem('eduscan_alumnos', JSON.stringify(alumnos));
+            localStorage.setItem('eduscan_modulos', JSON.stringify(modulos));
+            localStorage.setItem('eduscan_examenes', JSON.stringify(examenes));
+            localStorage.setItem('eduscan_calificaciones', JSON.stringify(calificaciones));
         }
-
-        // Cargar desde localStorage
-        function loadFromLocalStorage() {
-            const saved = localStorage.getItem('eduscan_students_nube');
-            if (saved && JSON.parse(saved).length > 0) {
-                students = JSON.parse(saved);
-            } else {
-                saveToLocalStorage();
-            }
+        
+        function cargarTodo() {
+            const savedAlumnos = localStorage.getItem('eduscan_alumnos');
+            const savedModulos = localStorage.getItem('eduscan_modulos');
+            const savedExamenes = localStorage.getItem('eduscan_examenes');
+            const savedCalif = localStorage.getItem('eduscan_calificaciones');
+            
+            if (savedAlumnos) alumnos = JSON.parse(savedAlumnos);
+            if (savedModulos) modulos = JSON.parse(savedModulos);
+            if (savedExamenes) examenes = JSON.parse(savedExamenes);
+            if (savedCalif) calificaciones = JSON.parse(savedCalif);
         }
-
-        // Renderizar todo
-        function render() {
-            // Estadísticas
-            document.getElementById('totalStudents').innerText = students.length;
-            const avg = students.length ? Math.round(students.reduce((s,a) => s + a.score, 0) / students.length) : 0;
-            document.getElementById('avgGrade').innerText = avg;
-            const passed = students.filter(s => s.score >= 60).length;
-            document.getElementById('passedCount').innerText = passed;
-
-            // Cuadro de Honor (Top 5)
-            const honorSorted = [...students].sort((a,b) => b.score - a.score).slice(0,5);
+        
+        // ============================================
+        // RENDERIZADO
+        // ============================================
+        
+        function getModuloNombre(id_modulo) {
+            const mod = modulos.find(m => m.id === id_modulo);
+            return mod ? mod.nombre : "Desconocido";
+        }
+        
+        function getPromedioAlumno(id_alumno) {
+            const notas = calificaciones.filter(c => c.id_alumno === id_alumno);
+            if (notas.length === 0) return 0;
+            const suma = notas.reduce((s, c) => s + c.nota, 0);
+            return Math.round(suma / notas.length);
+        }
+        
+        function actualizarPromedios() {
+            alumnos.forEach(a => {
+                a.promedio = getPromedioAlumno(a.id);
+            });
+        }
+        
+        function renderizarTodo() {
+            actualizarPromedios();
+            guardarTodo();
+            
+            // Estadisticas
+            document.getElementById('totalAlumnos').innerText = alumnos.length;
+            document.getElementById('totalModulos').innerText = modulos.length;
+            document.getElementById('totalExamenes').innerText = examenes.length;
+            const promedioGeneral = alumnos.length ? Math.round(alumnos.reduce((s,a) => s + a.promedio, 0) / alumnos.length) : 0;
+            document.getElementById('promedioGeneral').innerText = promedioGeneral;
+            
+            // Cuadro de Honor
+            const honor = [...alumnos].sort((a,b) => b.promedio - a.promedio).slice(0,5);
             const honorBody = document.querySelector('#honorTable tbody');
-            honorBody.innerHTML = honorSorted.map((s,i) => `
-                <tr>
-                    <td>${i+1}</td>
-                    <td>${s.name}</td>
-                    <td>${s.grade}°</td>
-                    <td>${s.score}%</td>
-                </tr>
+            honorBody.innerHTML = honor.map((a,i) => `
+                <tr><td>${i+1}</td><td>${a.nombre}</td><td>${a.grado}°</td><td>${a.promedio}%</td></tr>
             `).join('');
-
-            // Lista de alumnos
-            const studentsBody = document.querySelector('#studentsTable tbody');
-            studentsBody.innerHTML = students.map(s => {
-                let badgeClass = s.score >= 90 ? 'badge-excellent' : s.score >= 75 ? 'badge-good' : s.score >= 60 ? 'badge-average' : 'badge-low';
+            
+            // Progreso por grado
+            const progresoDiv = document.getElementById('progresoGrados');
+            const grados = [1,2,3,4,5,6,7,8,9,10,11];
+            progresoDiv.innerHTML = grados.map(g => {
+                const alumnosGrado = alumnos.filter(a => a.grado === g);
+                const promedio = alumnosGrado.length ? Math.round(alumnosGrado.reduce((s,a) => s + a.promedio, 0) / alumnosGrado.length) : 0;
+                return `
+                    <div style="padding: 12px 20px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>${g}° Grado (${alumnosGrado.length} alumnos)</span>
+                            <span>${promedio}%</span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" style="width: ${promedio}%"></div></div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Tabla Alumnos
+            const alumnosBody = document.querySelector('#alumnosTable tbody');
+            alumnosBody.innerHTML = alumnos.map(a => {
+                let badgeClass = a.promedio >= 90 ? 'badge-excellent' : a.promedio >= 75 ? 'badge-good' : a.promedio >= 60 ? 'badge-average' : 'badge-low';
                 return `
                     <tr>
-                        <td>${s.id}</td>
-                        <td>${s.name}</td>
-                        <td>${s.grade}°</td>
-                        <td><span class="badge ${badgeClass}">${s.score}%</span></td>
+                        <td>${a.id}</td>
+                        <td>${a.nombre}</td>
+                        <td>${a.grado}°</td>
+                        <td><span class="badge ${badgeClass}">${a.promedio}%</span></td>
                         <td>
-                            <button onclick="editarAlumno(${s.id})" style="background:none; border:none; cursor:pointer; font-size:1.2rem;">✏️</button>
-                            <button onclick="eliminarAlumno(${s.id})" style="background:none; border:none; cursor:pointer; font-size:1.2rem;">���️</button>
+                            <button class="btn-secondary" style="padding:4px 8px;" onclick="editarAlumno(${a.id})">Editar</button>
+                            <button class="btn-secondary" style="padding:4px 8px; background:#fee2e2;" onclick="eliminarAlumno(${a.id})">Eliminar</button>
                         </td>
                     </tr>
                 `;
             }).join('');
+            
+            // Modulos
+            const modulosDiv = document.getElementById('modulosList');
+            modulosDiv.innerHTML = grados.map(g => {
+                const modulosGrado = modulos.filter(m => m.grado === g);
+                if (modulosGrado.length === 0) return '';
+                return `
+                    <div class="table-container" style="margin-top: 15px;">
+                        <div class="table-header">${g}° Grado</div>
+                        <table>
+                            <tbody>
+                                ${modulosGrado.map(m => `
+                                    <tr>
+                                        <td>📚 ${m.nombre}</td>
+                                        <td>${m.descripcion}</td>
+                                        <td>
+                                            <button onclick="editarModulo(${m.id})">✏️</button>
+                                            <button onclick="eliminarModulo(${m.id})">🗑️</button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }).join('');
+            
+            // Examenes
+            const examenesBody = document.querySelector('#examenesTable tbody');
+            examenesBody.innerHTML = examenes.map(e => `
+                <tr>
+                    <td>${e.id}</td>
+                    <td>${e.titulo}</td>
+                    <td>${getModuloNombre(e.id_modulo)}</td>
+                    <td>${e.grado}°</td>
+                    <td>${e.fecha}</td>
+                    <td>
+                        <button onclick="editarExamen(${e.id})">✏️</button>
+                        <button onclick="eliminarExamen(${e.id})">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            // Selector de alumno para calificaciones
+            const selectAlumno = document.getElementById('selectAlumnoCalif');
+            selectAlumno.innerHTML = '<option value="">Seleccionar alumno</option>' + 
+                alumnos.map(a => `<option value="${a.id}">${a.nombre} (${a.grado}°)</option>`).join('');
         }
-
-        // CRUD: Agregar
+        
+        function cargarCalificacionesAlumno() {
+            const alumnoId = document.getElementById('selectAlumnoCalif').value;
+            if (!alumnoId) return;
+            
+            const notasAlumno = calificaciones.filter(c => c.id_alumno == alumnoId);
+            const alumno = alumnos.find(a => a.id == alumnoId);
+            
+            const tbody = document.querySelector('#calificacionesTable tbody');
+            if (notasAlumno.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3">No hay calificaciones registradas</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = notasAlumno.map(c => {
+                const examen = examenes.find(e => e.id === c.id_examen);
+                return `
+                    <tr>
+                        <td>${examen ? examen.titulo : 'Desconocido'}</td>
+                        <td><span class="badge ${c.nota >= 70 ? 'badge-good' : 'badge-average'}">${c.nota}%</span></td>
+                        <td>${c.fecha}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        // ============================================
+        // CRUD ALUMNOS
+        // ============================================
+        
         function agregarAlumno() {
-            const name = prompt('Nombre del alumno:');
-            const grade = parseInt(prompt('Grado (1-11):'));
-            const score = parseInt(prompt('Calificación (0-100):'));
-            if (name && grade && !isNaN(score) && grade >= 1 && grade <= 11 && score >= 0 && score <= 100) {
-                const newId = Math.max(...students.map(s=>s.id), 0) + 1;
-                students.push({ id: newId, name, grade, score });
-                saveToLocalStorage();
-                render();
-            } else {
-                alert('Datos inválidos. Asegúrate de que el grado sea 1-11 y la nota 0-100');
+            const nombre = prompt("Nombre del alumno:");
+            const grado = parseInt(prompt("Grado (1-11):"));
+            if (nombre && grado >= 1 && grado <= 11) {
+                const newId = Math.max(...alumnos.map(a=>a.id), 0) + 1;
+                alumnos.push({ id: newId, nombre: nombre, grado: grado, promedio: 0 });
+                guardarTodo();
+                renderizarTodo();
             }
         }
-
-        // CRUD: Editar
+        
         function editarAlumno(id) {
-            const s = students.find(s => s.id === id);
-            if(s) {
-                const name = prompt('Nuevo nombre:', s.name);
-                const grade = parseInt(prompt('Nuevo grado (1-11):', s.grade));
-                const score = parseInt(prompt('Nueva calificación (0-100):', s.score));
-                if(name && grade && !isNaN(score) && grade >= 1 && grade <= 11 && score >= 0 && score <= 100) {
-                    s.name = name;
-                    s.grade = grade;
-                    s.score = score;
-                    saveToLocalStorage();
-                    render();
-                } else {
-                    alert('Datos inválidos');
+            const a = alumnos.find(a => a.id === id);
+            if (a) {
+                const nombre = prompt("Nuevo nombre:", a.nombre);
+                const grado = parseInt(prompt("Nuevo grado:", a.grado));
+                if (nombre && grado >= 1 && grado <= 11) {
+                    a.nombre = nombre;
+                    a.grado = grado;
+                    guardarTodo();
+                    renderizarTodo();
                 }
             }
         }
-
-        // CRUD: Eliminar
+        
         function eliminarAlumno(id) {
-            if(confirm('¿Eliminar este alumno?')) {
-                students = students.filter(s => s.id !== id);
-                saveToLocalStorage();
-                render();
+            if (confirm("Eliminar este alumno?")) {
+                alumnos = alumnos.filter(a => a.id !== id);
+                calificaciones = calificaciones.filter(c => c.id_alumno !== id);
+                guardarTodo();
+                renderizarTodo();
             }
         }
-
-        // Inicializar
-        loadFromLocalStorage();
-        render();
+        
+        // ============================================
+        // CRUD MODULOS
+        // ============================================
+        
+        function agregarModulo() {
+            const nombre = prompt("Nombre del modulo:");
+            const grado = parseInt(prompt("Grado (1-11):"));
+            const descripcion = prompt("Descripcion:");
+            if (nombre && grado >= 1 && grado <= 11) {
+                const newId = Math.max(...modulos.map(m=>m.id), 0) + 1;
+                modulos.push({ id: newId, nombre: nombre, grado: grado, descripcion: descripcion || "" });
+                guardarTodo();
+                renderizarTodo();
+            }
+        }
+        
+        function editarModulo(id) {
+            const m = modulos.find(m => m.id === id);
+            if (m) {
+                const nombre = prompt("Nuevo nombre:", m.nombre);
+                const grado = parseInt(prompt("Nuevo grado:", m.grado));
+                const descripcion = prompt("Nueva descripcion:", m.descripcion);
+                if (nombre && grado >= 1 && grado <= 11) {
+                    m.nombre = nombre;
+                    m.grado = grado;
+                    m.descripcion = descripcion || "";
+                    guardarTodo();
+                    renderizarTodo();
+                }
+            }
+        }
+        
+        function eliminarModulo(id) {
+            if (confirm("Eliminar este modulo?")) {
+                modulos = modulos.filter(m => m.id !== id);
+                examenes = examenes.filter(e => e.id_modulo !== id);
+                guardarTodo();
+                renderizarTodo();
+            }
+        }
+        
+        // ============================================
+        // CRUD EXAMENES
+        // ============================================
+        
+        function agregarExamen() {
+            const titulo = prompt("Titulo del examen:");
+            const grado = parseInt(prompt("Grado:"));
+            const moduloNombre = prompt("Modulo (nombre):");
+            const fecha = prompt("Fecha (YYYY-MM-DD):");
+            
+            if (titulo && grado && moduloNombre && fecha) {
+                let modulo = modulos.find(m => m.nombre.toLowerCase() === moduloNombre.toLowerCase() && m.grado === grado);
+                if (!modulo) {
+                    const newIdMod = Math.max(...modulos.map(m=>m.id), 0) + 1;
+                    modulo = { id: newIdMod, nombre: moduloNombre, grado: grado, descripcion: "" };
+                    modulos.push(modulo);
+                }
+                const newId = Math.max(...examenes.map(e=>e.id), 0) + 1;
+                examenes.push({ id: newId, titulo: titulo, id_modulo: modulo.id, grado: grado, fecha: fecha });
+                guardarTodo();
+                renderizarTodo();
+            }
+        }
+        
+        function editarExamen(id) {
+            const e = examenes.find(e => e.id === id);
+            if (e) {
+                const titulo = prompt("Nuevo titulo:", e.titulo);
+                const grado = parseInt(prompt("Nuevo grado:", e.grado));
+                const fecha = prompt("Nueva fecha:", e.fecha);
+                if (titulo && grado) {
+                    e.titulo = titulo;
+                    e.grado = grado;
+                    e.fecha = fecha;
+                    guardarTodo();
+                    renderizarTodo();
+                }
+            }
+        }
+        
+        function eliminarExamen(id) {
+            if (confirm("Eliminar este examen?")) {
+                examenes = examenes.filter(e => e.id !== id);
+                calificaciones = calificaciones.filter(c => c.id_examen !== id);
+                guardarTodo();
+                renderizarTodo();
+            }
+        }
+        
+        // ============================================
+        // INICIALIZACION
+        // ============================================
+        
+        cargarTodo();
+        renderizarTodo();
+        
+        // Eventos
+        document.getElementById('selectAlumnoCalif').addEventListener('change', cargarCalificacionesAlumno);
+        
+        // Pestañas
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+                if (btn.dataset.tab === 'calificaciones') {
+                    cargarCalificacionesAlumno();
+                }
+            });
+        });
     </script>
 </body>
 </html>
