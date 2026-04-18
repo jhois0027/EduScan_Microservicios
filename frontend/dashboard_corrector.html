@@ -274,38 +274,71 @@
             }, 1500);
         }
         
-        function guardarCalificacion() {
-            if (!ultimaCorreccion) return;
-            
-            let calificaciones = JSON.parse(localStorage.getItem('eduscan_calificaciones') || '[]');
-            calificaciones.push({
+        async function guardarCalificacion() {
+    if (!ultimaCorreccion) {
+        mostrarToast('No hay correccion para guardar', true);
+        return;
+    }
+
+    try {
+        // Intentar guardar en la API
+        const response = await fetch(`${API_URL}/calificaciones`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
                 id_alumno: parseInt(ultimaCorreccion.alumnoId),
                 id_examen: parseInt(ultimaCorreccion.examenId),
-                nota: ultimaCorreccion.nota,
-                fecha: new Date().toISOString().split('T')[0]
-            });
-            localStorage.setItem('eduscan_calificaciones', JSON.stringify(calificaciones));
-            
-            let alumnosData = JSON.parse(localStorage.getItem('eduscan_alumnos') || '[]');
-            const notasAlumno = calificaciones.filter(c => c.id_alumno === parseInt(ultimaCorreccion.alumnoId));
-            const nuevoPromedio = Math.round(notasAlumno.reduce((s,c) => s + c.nota, 0) / notasAlumno.length);
-            const idx = alumnosData.findIndex(a => a.id === parseInt(ultimaCorreccion.alumnoId));
-            if (idx !== -1) alumnosData[idx].promedio = nuevoPromedio;
+                nota: ultimaCorreccion.nota
+            })
+        });
+
+        if (response.ok) {
+            mostrarToast(`✅ Calificación guardada: ${ultimaCorreccion.nota}%`);
+        } else {
+            throw new Error('Error en API');
+        }
+    } catch (error) {
+        console.error("Error guardando en API, usando localStorage:", error);
+        
+        // Fallback a localStorage (corregido)
+        let calificaciones = JSON.parse(localStorage.getItem('eduscan_calificaciones') || '[]');
+        calificaciones.push({
+            id_alumno: parseInt(ultimaCorreccion.alumnoId),
+            id_examen: parseInt(ultimaCorreccion.examenId),
+            nota: ultimaCorreccion.nota,
+            fecha: new Date().toISOString().split('T')[0]
+        });
+        localStorage.setItem('eduscan_calificaciones', JSON.stringify(calificaciones));
+        
+        // Actualizar promedio del alumno (CORREGIDO)
+        let alumnosData = JSON.parse(localStorage.getItem('eduscan_alumnos') || '[]');
+        const notasAlumno = calificaciones.filter(c => c.id_alumno === parseInt(ultimaCorreccion.alumnoId));
+        const nuevoPromedio = notasAlumno.length > 0 
+            ? Math.round(notasAlumno.reduce((s, c) => s + c.nota, 0) / notasAlumno.length)
+            : ultimaCorreccion.nota;
+        
+        const idx = alumnosData.findIndex(a => a.id === parseInt(ultimaCorreccion.alumnoId));
+        if (idx !== -1) {
+            alumnosData[idx].promedio = nuevoPromedio;
             localStorage.setItem('eduscan_alumnos', JSON.stringify(alumnosData));
-            
-            mostrarToast(Calificacion guardada: ${ultimaCorreccion.nota}%);
-            document.getElementById('btnGuardar').style.display = 'none';
-            currentImageData = null;
-            document.getElementById('btnCorregir').disabled = true;
         }
         
+        mostrarToast(`✅ Calificación guardada LOCALMENTE: ${ultimaCorreccion.nota}%`);
+    }
+    
+    // Limpiar después de guardar
+    document.getElementById('btnGuardar').style.display = 'none';
+    document.getElementById('btnCorregir').disabled = true;
+    currentImageData = null;
+    
+    // Recargar alumnos para actualizar el promedio
+    await cargarAlumnos();
+}
+
         document.getElementById('btnAbrirCamara').onclick = abrirCamara;
         document.getElementById('btnSubirImagen').onclick = subirImagen;
         document.getElementById('fileInput').onchange = handleImageUpload;
         document.getElementById('btnCorregir').onclick = corregirExamen;
-        document.getElementById('btnGuardar').onclick = guardarCalificacion;
-        
+
         cargarDatos();
     </script>
-</body>
-</html>

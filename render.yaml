@@ -1,0 +1,75 @@
+services:
+  # ========== BASE DE DATOS POSTGRESQL ==========
+  - type: postgresql
+    name: EduScan_db
+    region: oregon
+    plan: free
+    databaseName: eduscan
+    user: eduscan_user
+
+  # ========== API DE BASE DE DATOS ==========
+  - type: web
+    name: eduscan-database
+    runtime: python
+    repo: https://github.com/jhois0027/EduScan_Microservicios.git
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn services.database:app --host 0.0.0.0 --port 8003
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: EduScan_db
+          property: connectionString
+
+  # ========== API GATEWAY ==========
+  - type: web
+    name: eduscan-gateway
+    runtime: python
+    repo: https://github.com/jhois0027/EduScan_Microservicios.git
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api.gateway:app --host 0.0.0.0 --port 8000
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: EduScan_db
+          property: connectionString
+
+  # ========== SERVICIO DE IA (GEMINI) ==========
+  - type: web
+    name: eduscan-ia
+    runtime: python
+    repo: https://github.com/jhois0027/EduScan_Microservicios.git
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn services.ia_modelo:app --host 0.0.0.0 --port 8002
+    envVars:
+      - key: GEMINI_API_KEY
+        value: TU_API_KEY_AQUI  # í´´ CAMBIA ESTO POR TU API KEY REAL
+
+  # ========== PROCESAMIENTO ==========
+  - type: web
+    name: eduscan-procesamiento
+    runtime: python
+    repo: https://github.com/jhois0027/EduScan_Microservicios.git
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn services.procesamiento:app --host 0.0.0.0 --port 8001
+
+  # ========== FRONTEND PRINCIPAL ==========
+  - type: web
+    name: eduscan-frontend
+    runtime: static
+    repo: https://github.com/jhois0027/EduScan_Microservicios.git
+    branch: main
+    buildCommand: echo "Static site ready"
+    publishDirectory: ./frontend
+
+  # ========== DASHBOARD (Static) ==========
+  - type: web
+    name: eduscan-dashboard
+    runtime: static
+    repo: https://github.com/jhois0027/EduScan_Microservicios.git
+    branch: main
+    buildCommand: echo "Static site ready"
+    publishDirectory: ./frontend

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduScan - Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .login-card {
+            background: white;
+            border-radius: 32px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.2);
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo h1 { color: #4f46e5; font-size: 2rem; }
+        input {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 16px;
+            border-radius: 60px;
+            border: 1px solid #e2e8f0;
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .error {
+            color: #ef4444;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="logo">
+            <h1>EduScan</h1>
+            <p>Iniciar sesión</p>
+        </div>
+        <input type="text" id="username" placeholder="Usuario">
+        <input type="password" id="password" placeholder="Contraseña">
+        <button onclick="login()">Ingresar</button>
+        <div id="errorMsg" class="error"></div>
+    </div>
+
+    <script>
+        // Usuarios válidos (después conectas a BD)
+        const USERS = [
+            { username: "profesor", password: "1234", role: "teacher" },
+            { username: "admin", password: "admin", role: "admin" }
+        ];
+        
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            const user = USERS.find(u => u.username === username && u.password === password);
+            
+            if (user) {
+                localStorage.setItem('eduscan_user', JSON.stringify({ username: user.username, role: user.role }));
+                window.location.href = 'dashboard_nube.html';
+            } else {
+                document.getElementById('errorMsg').innerText = 'Usuario o contraseña incorrectos';
+            }
+        }
+        
+        // Verificar si ya está logueado
+        const savedUser = localStorage.getItem('eduscan_user');
+        if (savedUser) {
+            window.location.href = 'dashboard_nube.html';
+        }
+    </script>
+</body>
+</html>
