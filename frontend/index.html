@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduScan - Corrector IA</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1> EduScan - Corrector Automático con IA</h1>
+            <p>Sistema inteligente de corrección de exámenes utilizando inteligencia artificial avanzada</p>
+        </header>
+        
+        <div class="card">
+            <h2> Capturar Examen</h2>
+            <div class="camera-container">
+                <video id="camera" autoplay playsinline></video>
+                <canvas id="canvas" style="display:none;"></canvas>
+                <div class="button-group">
+                    <button id="btnAbrirCamara" class="btn-primary"> Abrir Cámara</button>
+                    <button id="btnTomarFoto" class="btn-secondary"> Tomar Foto</button>
+                    <button id="btnSubirArchivo" class="btn-secondary"> Subir Imagen</button>
+                </div>
+                <input type="file" id="fileInput" accept="image/*" style="display:none;">
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2> Información del Examen</h2>
+            <div class="form-group">
+                <label>Nombre del Alumno:</label>
+                <select id="selectAlumno">
+                    <option value="">-- Seleccionar alumno --</option>
+                    <option value="1">Valentina Rojas (11°)</option>
+                    <option value="2">Mateo Herrera (10°)</option>
+                    <option value="3">Sofia Ramirez (11°)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Nombre del Examen:</label>
+                <input type="text" id="examenNombre" placeholder="Ej: Examen de Matemáticas - Unidad 2">
+            </div>
+            <div class="form-group">
+                <label>Grado:</label>
+                <input type="number" id="examenGrado" placeholder="1-11" min="1" max="11">
+            </div>
+        </div>
+        
+        <button id="btnCorregir" class="btn-corregir"> Corregir con IA</button>
+        
+        <div id="resultado" class="resultado" style="display:none;"></div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

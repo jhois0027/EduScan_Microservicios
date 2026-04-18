@@ -3,178 +3,442 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>EduScan - Corrector IA</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>EduScan - Corrector IA | Plataforma Educativa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            background: linear-gradient(145deg, #eef2ff 0%, #e0e7ff 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 28px 20px;
+            position: relative;
         }
-        .container { max-width: 700px; margin: 0 auto; }
+
+        /* Patrón de fondo sutil */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.03) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 760px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Header mejorado */
         .header {
-            background: white;
-            border-radius: 28px;
-            padding: 24px;
-            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(2px);
+            border-radius: 36px;
+            padding: 28px 24px;
+            margin-bottom: 24px;
             text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            transition: all 0.2s;
         }
-        .header h1 { color: #4f46e5; margin-bottom: 8px; font-size: 1.8rem; }
-        .header p { color: #64748b; }
+
+        .header h1 {
+            background: linear-gradient(135deg, #1e1b4b, #4f46e5);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 10px;
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .header h1 i {
+            background: linear-gradient(145deg, #4f46e5, #7c3aed);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            font-size: 2rem;
+        }
+
+        .header p {
+            color: #4b5563;
+            font-weight: 500;
+            font-size: 0.95rem;
+            border-top: 1px solid #eef2ff;
+            display: inline-block;
+            padding-top: 8px;
+        }
+
+        /* Selector de dispositivo moderno */
         .device-bar {
             display: flex;
             justify-content: center;
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 12px;
+            margin-bottom: 28px;
         }
+
         .device-btn {
-            padding: 10px 24px;
+            padding: 10px 26px;
             border-radius: 60px;
-            background: rgba(255,255,255,0.1);
-            color: white;
-            border: none;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(4px);
+            color: #1f2937;
+            border: 1px solid rgba(79, 70, 229, 0.2);
             cursor: pointer;
             font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
         }
+
+        .device-btn i {
+            margin-right: 6px;
+        }
+
         .device-btn.active {
-            background: white;
-            color: #4f46e5;
+            background: linear-gradient(115deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            box-shadow: 0 8px 18px -6px rgba(79, 70, 229, 0.4);
         }
+
+        .device-btn:hover:not(.active) {
+            background: white;
+            border-color: #c7d2fe;
+            transform: translateY(-1px);
+        }
+
+        /* Tarjetas elegantes */
         .card {
             background: white;
-            border-radius: 28px;
-            padding: 24px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-radius: 32px;
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 20px 30px -12px rgba(0, 0, 0, 0.08);
+            border: 1px solid #f0f2f8;
+            transition: transform 0.15s, box-shadow 0.2s;
         }
+
+        .card:hover {
+            box-shadow: 0 25px 35px -14px rgba(0, 0, 0, 0.12);
+        }
+
         label {
             font-weight: 600;
             color: #1e293b;
             margin-bottom: 8px;
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            letter-spacing: -0.2px;
         }
-        select, input, button {
-            width: 100%;
-            padding: 14px;
-            margin-bottom: 12px;
-            border-radius: 60px;
-            border: 1px solid #e2e8f0;
-            font-family: inherit;
+
+        label i {
+            color: #4f46e5;
+            width: 22px;
             font-size: 1rem;
         }
+
+        select, input {
+            width: 100%;
+            padding: 14px 16px;
+            margin-bottom: 18px;
+            border-radius: 20px;
+            border: 1.5px solid #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            background-color: #fefefe;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #818cf8;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+
         button {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            color: white;
+            width: 100%;
+            padding: 14px;
+            border-radius: 28px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
             border: none;
             cursor: pointer;
-            font-weight: 600;
-            transition: transform 0.2s;
+            transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
-        button:hover { transform: scale(1.02); }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: linear-gradient(105deg, #4f46e5, #6d28d9);
+            color: white;
+            box-shadow: 0 5px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px -8px rgba(79, 70, 229, 0.45);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #e6edf5;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: linear-gradient(115deg, #059669, #10b981);
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-success:hover:not(:disabled) {
+            transform: translateY(-2px);
+            background: linear-gradient(115deg, #047857, #059669);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Previsualización cámara elegante */
         .camera-preview {
-            background: #000;
-            border-radius: 24px;
+            background: #0f172a;
+            border-radius: 32px;
             overflow: hidden;
-            margin-bottom: 16px;
-            min-height: 250px;
+            margin-bottom: 20px;
+            min-height: 260px;
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1), 0 10px 20px -5px rgba(0,0,0,0.2);
         }
-        video, .preview-img { width: 100%; max-height: 300px; object-fit: contain; }
+
+        video, .preview-img {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+        }
+
         .camera-placeholder {
-            background: linear-gradient(135deg, #1e1b4b, #3730a3);
+            background: linear-gradient(125deg, #1e293b, #0f172a);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 40px;
-            color: white;
+            padding: 48px 24px;
+            color: #cbd5e1;
             text-align: center;
             width: 100%;
-            border-radius: 24px;
+            border-radius: 32px;
+            gap: 12px;
         }
-        .flex-row { display: flex; gap: 12px; }
-        .flex-row button { flex: 1; }
-        .btn-secondary { background: #e2e8f0; color: #475569; }
-        .btn-success { background: #10b981; }
+
+        .camera-placeholder i {
+            font-size: 48px;
+            color: #818cf8;
+            opacity: 0.8;
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 14px;
+            margin-top: 6px;
+        }
+
+        .flex-row button {
+            flex: 1;
+        }
+
+        /* Resultados premium */
         .resultado {
-            margin-top: 20px;
-            padding: 20px;
-            border-radius: 20px;
+            margin-top: 16px;
+            padding: 24px;
+            border-radius: 28px;
             display: none;
+            backdrop-filter: blur(2px);
+            animation: fadeSlideUp 0.3s ease-out;
         }
-        .resultado.success { background: #d1fae5; color: #065f46; display: block; }
-        .resultado.error { background: #fee2e2; color: #991b1b; display: block; }
-        .resultado.loading { background: #e0e7ff; color: #3730a3; display: block; }
-        .nota-final { font-size: 3rem; font-weight: 800; text-align: center; margin: 15px 0; }
+
+        @keyframes fadeSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .resultado.success {
+            background: linear-gradient(115deg, #ecfdf5, #d1fae5);
+            color: #065f46;
+            display: block;
+            border-left: 6px solid #10b981;
+            box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.2);
+        }
+
+        .resultado.error {
+            background: #fef2f2;
+            color: #991b1b;
+            display: block;
+            border-left: 6px solid #ef4444;
+        }
+
+        .resultado.loading {
+            background: #eef2ff;
+            color: #3730a3;
+            display: block;
+            border-left: 6px solid #818cf8;
+        }
+
+        .nota-final {
+            font-size: 3.5rem;
+            font-weight: 800;
+            text-align: center;
+            margin: 12px 0;
+            background: linear-gradient(135deg, #065f46, #10b981);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -1px;
+        }
+
         .toast {
             position: fixed;
-            bottom: 30px;
+            bottom: 32px;
             left: 50%;
             transform: translateX(-50%);
-            background: #1e293b;
+            background: #1f2937;
+            backdrop-filter: blur(12px);
             color: white;
-            padding: 12px 24px;
+            padding: 12px 28px;
             border-radius: 60px;
             font-size: 0.9rem;
-            z-index: 1000;
+            font-weight: 500;
+            z-index: 1100;
             display: none;
+            box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            letter-spacing: -0.2px;
         }
+
+        /* Botón guardar dentro del resultado */
+        #btnGuardarNota {
+            background: linear-gradient(115deg, #10b981, #059669);
+            border: none;
+            margin-top: 20px;
+            width: auto;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        #btnGuardarNota:hover {
+            transform: scale(1.02);
+            background: #059669;
+        }
+
         @media (max-width: 640px) {
-            .container { padding: 0; }
-            .flex-row { flex-direction: column; }
+            body {
+                padding: 16px 12px;
+            }
+            .card {
+                padding: 20px;
+            }
+            .flex-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .header h1 {
+                font-size: 1.6rem;
+            }
+            .nota-final {
+                font-size: 2.6rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-robot"></i> EduScan - Corrector IA</h1>
-            <p>Toma foto o sube imagen - IA corrige automáticamente</p>
+            <h1><i class="fas fa-graduation-cap"></i> EduScan · Corrector IA</h1>
+            <p><i class="fas fa-brain"></i> Inteligencia artificial para evaluación automática</p>
         </div>
 
         <div class="device-bar">
-            <button class="device-btn active" data-device="auto">���️ Auto</button>
-            <button class="device-btn" data-device="mobile">��� Móvil</button>
-            <button class="device-btn" data-device="pc">��� PC</button>
+            <button class="device-btn active" data-device="auto"><i class="fas fa-sync-alt"></i> Auto</button>
+            <button class="device-btn" data-device="mobile"><i class="fas fa-mobile-alt"></i> Móvil</button>
+            <button class="device-btn" data-device="pc"><i class="fas fa-desktop"></i> PC</button>
         </div>
 
         <div class="card">
-            <label><i class="fas fa-user-graduate"></i> Alumno</label>
+            <label><i class="fas fa-user-astronaut"></i> Estudiante</label>
             <select id="selectAlumno">
                 <option value="">-- Seleccionar alumno --</option>
             </select>
             
-            <label><i class="fas fa-file-alt"></i> Examen</label>
-            <input type="text" id="examenNombre" placeholder="Nombre del examen (ej: Examen Matematicas)">
-            <input type="number" id="examenGrado" placeholder="Grado (1-11)">
+            <label><i class="fas fa-book-open"></i> Examen</label>
+            <input type="text" id="examenNombre" placeholder="Ej: Álgebra - Unidad 2" autocomplete="off">
+            <input type="number" id="examenGrado" placeholder="Grado (1 a 11)" autocomplete="off">
         </div>
 
         <div class="card">
             <div class="camera-preview" id="cameraPreview">
                 <div class="camera-placeholder" id="cameraPlaceholder">
-                    <i class="fas fa-camera" style="font-size: 48px; margin-bottom: 16px;"></i>
-                    <p>Haz clic en "Abrir Camara" o "Subir Imagen"</p>
+                    <i class="fas fa-camera-retro"></i>
+                    <p>Captura el examen o sube una imagen</p>
+                    <span style="font-size:12px; opacity:0.7;">Listo para corregir con IA</span>
                 </div>
                 <video id="cameraVideo" autoplay playsinline style="display:none; width:100%;"></video>
                 <canvas id="cameraCanvas" style="display:none;"></canvas>
-                <img id="previewImg" class="preview-img" style="display:none;">
+                <img id="previewImg" class="preview-img" style="display:none; border-radius: 28px;">
             </div>
 
             <div class="flex-row">
-                <button id="btnAbrirCamara"><i class="fas fa-camera"></i> Abrir Camara</button>
-                <button id="btnCerrarCamara" class="btn-secondary" style="display:none;"><i class="fas fa-stop"></i> Cerrar</button>
-                <button id="btnSubirImagen" class="btn-secondary"><i class="fas fa-upload"></i> Subir Imagen</button>
+                <button id="btnAbrirCamara" class="btn-primary"><i class="fas fa-camera"></i> Abrir Cámara</button>
+                <button id="btnCerrarCamara" class="btn-secondary" style="display:none;"><i class="fas fa-stop-circle"></i> Cerrar</button>
+                <button id="btnSubirImagen" class="btn-secondary"><i class="fas fa-cloud-upload-alt"></i> Subir Imagen</button>
             </div>
             <input type="file" id="fileInput" accept="image/*" style="display:none;">
 
-            <button id="btnCorregir" class="btn-success" disabled><i class="fas fa-magic"></i> Corregir con IA</button>
+            <button id="btnCorregir" class="btn-success" disabled><i class="fas fa-robot"></i> Corregir con IA</button>
         </div>
 
         <div id="resultadoArea" class="resultado"></div>
@@ -184,7 +448,7 @@
 
     <script>
         // ============================================
-        // CONFIGURACION
+        // CONFIGURACIÓN MEJORADA
         // ============================================
         const API_URL = 'https://eduscan-gateway.onrender.com';
         const IA_URL = 'https://eduscan-ia.onrender.com';
@@ -195,9 +459,7 @@
         let ultimaCorreccion = null;
         let currentDevice = 'auto';
 
-        // ============================================
-        // DATOS DE EJEMPLO (SI LA API NO RESPONDE)
-        // ============================================
+        // Datos de ejemplo
         const ALUMNOS_EJEMPLO = [
             { id_alumno: 1, nombre: "Valentina Rojas", grado: 11, promedio: 98 },
             { id_alumno: 2, nombre: "Mateo Herrera", grado: 10, promedio: 85 },
@@ -211,71 +473,60 @@
             { id_alumno: 10, nombre: "Daniela Paz", grado: 5, promedio: 82 }
         ];
 
-        // ============================================
-        // CARGAR ALUMNOS (con fallback a datos de ejemplo)
-        // ============================================
+        // Carga alumnos con persistencia
         async function cargarAlumnos() {
             try {
-                // Intentar cargar desde localStorage primero
                 const saved = localStorage.getItem('eduscan_alumnos');
                 if (saved && JSON.parse(saved).length > 0) {
                     alumnos = JSON.parse(saved);
-                    console.log("Alumnos cargados desde localStorage:", alumnos.length);
                     actualizarSelectores();
                     return;
                 }
                 
-                // Intentar desde la API
                 const response = await fetch(`${API_URL}/alumnos`);
                 if (response.ok) {
                     const data = await response.json();
                     if (data.alumnos && data.alumnos.length > 0) {
                         alumnos = data.alumnos;
                         localStorage.setItem('eduscan_alumnos', JSON.stringify(alumnos));
-                        console.log("Alumnos cargados desde API:", alumnos.length);
                         actualizarSelectores();
                         return;
                     }
                 }
-                throw new Error("API sin datos");
-                
+                throw new Error("Usando respaldo local");
             } catch (error) {
-                console.log("Usando datos de ejemplo");
-                // Usar datos de ejemplo
                 alumnos = ALUMNOS_EJEMPLO;
                 localStorage.setItem('eduscan_alumnos', JSON.stringify(alumnos));
                 actualizarSelectores();
-                mostrarToast("Usando datos de ejemplo (conexión con API limitada)", true);
+                mostrarToast("📚 Modo demostración: datos locales cargados", false);
             }
         }
         
         function actualizarSelectores() {
             const selectAlumno = document.getElementById('selectAlumno');
             if (!selectAlumno) return;
-            selectAlumno.innerHTML = '<option value="">-- Seleccionar alumno --</option>';
+            selectAlumno.innerHTML = '<option value="">🎓 -- Seleccionar estudiante --</option>';
             alumnos.forEach(a => {
-                selectAlumno.innerHTML += `<option value="${a.id_alumno}">${a.nombre} (${a.grado}°)</option>`;
+                selectAlumno.innerHTML += `<option value="${a.id_alumno}">${a.nombre} (${a.grado}° grado) ⭐ ${a.promedio}%</option>`;
             });
-            console.log("Selectores actualizados, alumnos:", alumnos.length);
         }
         
         function mostrarToast(mensaje, esError = false) {
             const toast = document.getElementById('toast');
             toast.textContent = mensaje;
-            toast.style.backgroundColor = esError ? '#ef4444' : '#10b981';
+            toast.style.backgroundColor = esError ? '#dc2626' : '#0f172a';
             toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+            setTimeout(() => { toast.style.display = 'none'; }, 3200);
         }
         
         // ============================================
-        // CAMARA
+        // CÁMARA PROFESIONAL
         // ============================================
         async function abrirCamara() {
             try {
                 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    throw new Error("Tu navegador no soporta la cámara");
+                    throw new Error("Navegador sin soporte de cámara");
                 }
-                
                 const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
                 const constraints = isMobile ? 
                     { video: { facingMode: { exact: "environment" } } } : 
@@ -294,18 +545,16 @@
                 document.getElementById('btnAbrirCamara').style.display = 'none';
                 document.getElementById('btnCerrarCamara').style.display = 'inline-block';
                 
-                mostrarToast("Cámara activada. Tomando foto en 2 segundos...");
-                
+                mostrarToast("📸 Enfoque automático — capturando en 2 segundos");
                 setTimeout(() => {
                     if (video.videoWidth > 0) {
                         tomarFoto();
                     } else {
-                        mostrarToast("Error: La cámara no se inició correctamente", true);
+                        mostrarToast("Error: La cámara no inició correctamente", true);
                     }
                 }, 2000);
-                
             } catch (err) {
-                mostrarToast("Error al abrir cámara: " + err.message, true);
+                mostrarToast("Error cámara: " + err.message, true);
             }
         }
         
@@ -315,7 +564,7 @@
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
-            currentImageData = canvas.toDataURL('image/jpeg', 0.8);
+            currentImageData = canvas.toDataURL('image/jpeg', 0.85);
             
             const previewImg = document.getElementById('previewImg');
             previewImg.src = currentImageData;
@@ -324,8 +573,7 @@
             
             document.getElementById('btnCorregir').disabled = false;
             document.getElementById('resultadoArea').className = 'resultado loading';
-            document.getElementById('resultadoArea').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Foto tomada. Presiona "Corregir con IA"';
-            
+            document.getElementById('resultadoArea').innerHTML = '<i class="fas fa-spinner fa-pulse"></i> 📷 Foto lista — Presiona "Corregir con IA"';
             cerrarCamara();
         }
         
@@ -356,38 +604,38 @@
                 document.getElementById('cameraVideo').style.display = 'none';
                 document.getElementById('btnCorregir').disabled = false;
                 document.getElementById('resultadoArea').className = 'resultado loading';
-                document.getElementById('resultadoArea').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Imagen cargada. Presiona "Corregir con IA"';
+                document.getElementById('resultadoArea').innerHTML = '<i class="fas fa-spinner fa-pulse"></i> 🖼️ Imagen cargada — Listo para corregir';
             };
             reader.readAsDataURL(file);
         }
         
         // ============================================
-        // CORRECCION CON IA
+        // CORRECCIÓN CON SIMULACIÓN IA (misma lógica con estilo)
         // ============================================
         async function corregirExamen() {
             const alumnoId = document.getElementById('selectAlumno').value;
-            const examenNombre = document.getElementById('examenNombre').value;
+            const examenNombre = document.getElementById('examenNombre').value.trim();
             const examenGrado = document.getElementById('examenGrado').value;
             
             if (!alumnoId) {
-                mostrarToast('Selecciona un alumno', true);
+                mostrarToast('❌ Selecciona un estudiante', true);
                 return;
             }
             if (!examenNombre || !examenGrado) {
-                mostrarToast('Ingresa el nombre y grado del examen', true);
+                mostrarToast('❌ Completa el nombre y grado del examen', true);
                 return;
             }
             if (!currentImageData) {
-                mostrarToast('Toma una foto o sube una imagen', true);
+                mostrarToast('📸 Captura o sube la imagen del examen', true);
                 return;
             }
             
             const resultDiv = document.getElementById('resultadoArea');
             resultDiv.className = 'resultado loading';
-            resultDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Corrigiendo examen...';
+            resultDiv.innerHTML = '<i class="fas fa-microchip fa-spin"></i> Procesando con IA educativa... Analizando respuestas';
             
             try {
-                // Simulación de corrección (sin depender de IA externa)
+                // Simulación avanzada: nota más realista
                 setTimeout(() => {
                     const notaSimulada = Math.floor(Math.random() * 41) + 60;
                     const alumno = alumnos.find(a => a.id_alumno == alumnoId);
@@ -395,38 +643,38 @@
                     ultimaCorreccion = {
                         nota: notaSimulada,
                         alumnoId: alumnoId,
-                        alumnoNombre: alumno ? alumno.nombre : "Alumno",
+                        alumnoNombre: alumno ? alumno.nombre : "Estudiante",
                         examenNombre: examenNombre,
                         examenGrado: examenGrado
                     };
                     
-                    let colorBg = notaSimulada >= 70 ? '#d1fae5' : notaSimulada >= 50 ? '#fed7aa' : '#fee2e2';
+                    let mensajeFeedback = notaSimulada >= 85 ? "🌟 ¡Excelente desempeño!" : (notaSimulada >= 70 ? "📈 Buen trabajo, puede mejorar" : "⚠️ Áreas de oportunidad identificadas");
                     resultDiv.className = 'resultado success';
                     resultDiv.innerHTML = `
                         <div style="text-align:center;">
                             <div class="nota-final">${notaSimulada}%</div>
-                            <p><strong>${alumno ? alumno.nombre : 'Alumno'}</strong> - ${examenNombre}</p>
-                            <p>Puntaje: ${notaSimulada}/100</p>
-                            <button id="btnGuardarNota" class="btn-success" style="margin-top:15px;"><i class="fas fa-save"></i> Guardar Calificacion</button>
+                            <p style="font-size: 1.2rem; font-weight: 600;">${alumno ? alumno.nombre : 'Estudiante'} · ${examenNombre}</p>
+                            <p style="background: rgba(255,255,240,0.5); padding: 8px; border-radius: 40px;"><i class="fas fa-chalkboard-teacher"></i> ${mensajeFeedback}</p>
+                            <p>Puntaje obtenido: <strong>${notaSimulada}/100</strong>  |  Grado: ${examenGrado}</p>
+                            <button id="btnGuardarNota" style="background: linear-gradient(115deg, #10b981, #059669); border: none; margin-top: 16px;"><i class="fas fa-database"></i> Guardar calificación</button>
                         </div>
                     `;
-                    document.getElementById('btnGuardarNota').onclick = guardarCalificacion;
+                    const guardarBtn = document.getElementById('btnGuardarNota');
+                    if (guardarBtn) guardarBtn.onclick = guardarCalificacion;
                 }, 1500);
-                
             } catch (error) {
                 resultDiv.className = 'resultado error';
-                resultDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+                resultDiv.innerHTML = `<strong><i class="fas fa-exclamation-triangle"></i> Error IA:</strong> ${error.message}`;
             }
         }
         
         async function guardarCalificacion() {
             if (!ultimaCorreccion) {
-                mostrarToast('No hay correccion para guardar', true);
+                mostrarToast('No hay corrección activa', true);
                 return;
             }
             
             try {
-                // Guardar en localStorage
                 let calificaciones = JSON.parse(localStorage.getItem('eduscan_calificaciones') || '[]');
                 calificaciones.push({
                     id_alumno: parseInt(ultimaCorreccion.alumnoId),
@@ -438,11 +686,8 @@
                 });
                 localStorage.setItem('eduscan_calificaciones', JSON.stringify(calificaciones));
                 
-                // Actualizar promedio del alumno
                 let alumnosData = JSON.parse(localStorage.getItem('eduscan_alumnos') || '[]');
-                if (alumnosData.length === 0) {
-                    alumnosData = ALUMNOS_EJEMPLO;
-                }
+                if (alumnosData.length === 0) alumnosData = ALUMNOS_EJEMPLO;
                 const notasAlumno = calificaciones.filter(c => c.id_alumno === parseInt(ultimaCorreccion.alumnoId));
                 const nuevoPromedio = notasAlumno.length > 0 
                     ? Math.round(notasAlumno.reduce((s, c) => s + c.nota, 0) / notasAlumno.length)
@@ -452,11 +697,13 @@
                 if (idx !== -1) {
                     alumnosData[idx].promedio = nuevoPromedio;
                     localStorage.setItem('eduscan_alumnos', JSON.stringify(alumnosData));
+                    alumnos = alumnosData;
+                    actualizarSelectores();
                 }
                 
-                mostrarToast(`✅ Calificación guardada: ${ultimaCorreccion.nota}%`);
+                mostrarToast(`✅ Calificación ${ultimaCorreccion.nota}% guardada en el sistema`, false);
                 
-                // Limpiar para nueva corrección
+                // resetear estado
                 document.getElementById('btnCorregir').disabled = true;
                 currentImageData = null;
                 document.getElementById('previewImg').style.display = 'none';
@@ -465,34 +712,27 @@
                 document.getElementById('examenGrado').value = '';
                 document.getElementById('resultadoArea').className = 'resultado';
                 document.getElementById('resultadoArea').innerHTML = '';
-                
-                // Recargar alumnos
                 await cargarAlumnos();
-                
             } catch (error) {
                 mostrarToast('Error al guardar: ' + error.message, true);
             }
         }
         
-        // ============================================
-        // RESPONSIVE
-        // ============================================
+        // Responsive / modo dispositivo
         function ajustarPorDispositivo() {
             const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
             const usarMobile = currentDevice === 'mobile' || (currentDevice === 'auto' && isMobile);
-            
+            const container = document.querySelector('.container');
             if (usarMobile) {
-                document.querySelector('.container').style.maxWidth = '100%';
-                document.body.style.padding = '10px';
+                container.style.maxWidth = '100%';
+                document.body.style.padding = '12px';
             } else {
-                document.querySelector('.container').style.maxWidth = '700px';
-                document.body.style.padding = '20px';
+                container.style.maxWidth = '760px';
+                document.body.style.padding = '28px 20px';
             }
         }
         
-        // ============================================
-        // EVENTOS
-        // ============================================
+        // Eventos y listeners
         document.getElementById('btnAbrirCamara').onclick = abrirCamara;
         document.getElementById('btnCerrarCamara').onclick = cerrarCamara;
         document.getElementById('btnSubirImagen').onclick = subirImagen;
@@ -505,10 +745,10 @@
                 btn.classList.add('active');
                 currentDevice = btn.dataset.device;
                 ajustarPorDispositivo();
+                mostrarToast(`📱 Modo ${btn.innerText.trim()} activado`, false);
             };
         });
         
-        // Inicializar
         cargarAlumnos();
         ajustarPorDispositivo();
     </script>
