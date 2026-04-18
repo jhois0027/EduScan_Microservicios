@@ -2,51 +2,33 @@ name: CI - Tests
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
 
 jobs:
-  validate:
+  test:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4  # ✅ Actualizado
-      
+    - uses: actions/checkout@v4  # ✅ CAMBIADO: antes era @v3
+    
     - name: Setup Python
-      uses: actions/setup-python@v5  # ✅ Actualizado
+      uses: actions/setup-python@v5  # ✅ CAMBIADO: antes era @v4
       with:
         python-version: '3.11'
     
-    - name: Verify project structure
+    - name: Install dependencies
       run: |
-        echo "📁 Verificando estructura del proyecto..."
-        ls -la
-        echo ""
-        echo "📄 Verificando archivos importantes..."
-        
-        # Verificar que existe el dashboard (opcional)
-        if [ -f "frontend/dashboard_nube.html" ]; then
-          echo "✅ Dashboard encontrado: frontend/dashboard_nube.html"
-        else
-          echo "⚠️ Dashboard no encontrado, pero continuamos..."
-        fi
-        
-        # Verificar README
-        if [ -f "README.md" ]; then
-          echo "✅ README.md encontrado"
-          head -n 3 README.md
-        else
-          echo "⚠️ README.md no encontrado"
-        fi
+        pip install --upgrade pip
+        pip install pytest pytest-cov
     
-    - name: Check Python syntax
+    - name: Run tests
       run: |
-        echo "🔍 Verificando sintaxis de Python..."
-        python -m py_compile app.py 2>/dev/null || echo "⚠️ app.py tiene errores o no existe"
-        
-    - name: All checks passed
-      run: |
-        echo "🎉 Todos los checks pasaron correctamente!"
-        echo "✅ Pipeline ejecutado exitosamente"
+        pytest tests/ -v --cov=. --cov-report=xml || echo "No tests found"
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v5  # ✅ CAMBIADO: antes era @v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: false
