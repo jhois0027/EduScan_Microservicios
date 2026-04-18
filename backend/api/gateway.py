@@ -1,11 +1,10 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from fastapi.responses import HTMLResponse
 import httpx
 import os
-from typing import List
 
-app = FastAPI(title="EduScan API", version="2.0.0")
+app = FastAPI(title="EduScan API Gateway", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -15,107 +14,222 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-PROCESAMIENTO_URL = os.getenv("PROCESAMIENTO_URL", "http://localhost:8001")
-IA_URL = os.getenv("IA_URL", "http://localhost:8002")
+# URLs de los servicios internos
+DATABASE_URL = os.environ.get('DATABASE_URL', 'https://eduscan-database.onrender.com')
+IA_URL = os.environ.get('IA_URL', 'https://eduscan-ia.onrender.com')
 
-class RespuestaCorreccion(BaseModel):
-    respuestas_alumno: List[float]
-    puntajes_preguntas: List[float]
-    correctas: int
-    incorrectas: int
-    desempeno_bajo: int
-    nota_final: float
-    detalles: dict
-
-@app.get("/")
+# ============================================
+# PÁGINA PRINCIPAL PROFESIONAL
+# ============================================
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    return {"mensaje": "EduScan API - Corrector de Examenes con IA Real", "version": "2.0.0"}
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "service": "gateway"}
-
-@app.post("/corregir", response_model=RespuestaCorreccion)
-async def corregir_examen(file: UploadFile = File(...)):
-    try:
-        imagen_bytes = await file.read()
-        
-        # 1. Procesar imagen
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            procesamiento_resp = await client.post(
-                f"{PROCESAMIENTO_URL}/procesar",
-                files={"file": (file.filename, imagen_bytes, file.content_type)}
-            )
-            if procesamiento_resp.status_code != 200:
-                raise HTTPException(status_code=500, detail="Error en procesamiento")
-            
-            datos_procesados = procesamiento_resp.json()
-        
-        # 2. Procesar cada pregunta con IA real
-        respuestas_puntos = []
-        respuestas_detectadas = []
-        
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            for pregunta_img in datos_procesados["preguntas"]:
-                ia_resp = await client.post(
-                    f"{IA_URL}/predecir",
-                    json={"imagen_base64": pregunta_img}
-                )
-                if ia_resp.status_code == 200:
-                    data = ia_resp.json()
-                    respuestas_puntos.append(data["puntaje"])
-                    respuestas_detectadas.append({
-                        "puntaje": data["puntaje"],
-                        "es_correcta": data["es_correcta"]
-                    })
-                else:
-                    respuestas_puntos.append(0.0)
-        
-        # 3. Calcular estadísticas
-        total_preguntas = len(respuestas_puntos)
-        
-        aprobadas = sum(1 for p in respuestas_puntos if p >= 4.0)
-        desempeno_bajo = sum(1 for p in respuestas_puntos if 3.1 <= p <= 3.9)
-        reprobadas = sum(1 for p in respuestas_puntos if p <= 3.0)
-        
-        nota_final = sum(respuestas_puntos) / total_preguntas if total_preguntas > 0 else 0
-        nota_final = min(nota_final, 5.0)
-        
-        if nota_final >= 4.0:
-            estado_general = "APRUEBA"
-            color = "green"
-        elif nota_final >= 3.1:
-            estado_general = "DESEMPEÑO BAJO"
-            color = "orange"
-        else:
-            estado_general = "REPROBADO"
-            color = "red"
-        
-        return RespuestaCorreccion(
-            respuestas_alumno=respuestas_puntos,
-            puntajes_preguntas=respuestas_puntos,
-            correctas=aprobadas,
-            incorrectas=reprobadas,
-            desempeno_bajo=desempeno_bajo,
-            nota_final=round(nota_final, 1),
-            detalles={
-                "total_preguntas": total_preguntas,
-                "valor_por_pregunta": round(5.0/total_preguntas, 2) if total_preguntas > 0 else 0,
-                "porcentaje": round((nota_final / 5.0) * 100, 1),
-                "estado_general": estado_general,
-                "color": color,
-                "aprobadas": aprobadas,
-                "desempeno_bajo": desempeno_bajo,
-                "reprobadas": reprobadas,
-                "respuestas_detectadas": respuestas_detectadas
+    return """
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>EduScan API Gateway</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Inter', sans-serif;
+                background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+                min-height: 100vh;
+                padding: 40px 20px;
             }
-        )
-        
-    except httpx.ConnectError:
-        raise HTTPException(status_code=503, detail="Servicio de procesamiento no disponible")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+            .container { max-width: 1200px; margin: 0 auto; }
+            .header { text-align: center; margin-bottom: 50px; }
+            .header h1 {
+                font-size: 3rem;
+                background: linear-gradient(135deg, #ffffff, #c7d2fe);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+            }
+            .header p { color: #94a3b8; font-size: 1.1rem; }
+            .badge {
+                display: inline-block;
+                background: rgba(99, 102, 241, 0.2);
+                padding: 4px 12px;
+                border-radius: 40px;
+                font-size: 0.8rem;
+                color: #a5b4fc;
+                margin-top: 15px;
+            }
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                gap: 24px;
+                margin-bottom: 40px;
+            }
+            .card {
+                background: rgba(255, 255, 255, 0.05);
+                backdrop-filter: blur(10px);
+                border-radius: 24px;
+                padding: 24px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                transition: transform 0.2s;
+            }
+            .card:hover { transform: translateY(-5px); background: rgba(255, 255, 255, 0.08); }
+            .card h3 { color: white; font-size: 1.3rem; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+            .card h3 i { color: #8b5cf6; }
+            .endpoint {
+                background: rgba(0, 0, 0, 0.3);
+                border-radius: 12px;
+                padding: 12px;
+                margin-bottom: 10px;
+            }
+            .endpoint-method {
+                display: inline-block;
+                padding: 4px 10px;
+                border-radius: 20px;
+                font-size: 0.7rem;
+                font-weight: 600;
+                margin-right: 10px;
+            }
+            .method-get { background: #10b981; color: white; }
+            .method-post { background: #3b82f6; color: white; }
+            .method-put { background: #f59e0b; color: white; }
+            .method-delete { background: #ef4444; color: white; }
+            .endpoint-url { color: #c7d2fe; font-family: monospace; font-size: 0.85rem; word-break: break-all; }
+            .endpoint-desc { color: #94a3b8; font-size: 0.75rem; margin-top: 5px; }
+            .services {
+                background: rgba(255, 255, 255, 0.03);
+                border-radius: 24px;
+                padding: 24px;
+                margin-top: 20px;
+            }
+            .services h3 { color: white; margin-bottom: 16px; }
+            .service-list { display: flex; flex-wrap: wrap; gap: 15px; }
+            .service-item {
+                background: rgba(99, 102, 241, 0.15);
+                border-radius: 12px;
+                padding: 8px 16px;
+                font-size: 0.85rem;
+                color: #a5b4fc;
+            }
+            .footer {
+                text-align: center;
+                margin-top: 40px;
+                color: #475569;
+                font-size: 0.75rem;
+            }
+            @media (max-width: 768px) {
+                .grid { grid-template-columns: 1fr; }
+                .header h1 { font-size: 2rem; }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>📡 EduScan API Gateway</h1>
+                <p>Punto de entrada único para todos los servicios de EduScan</p>
+                <div class="badge">⚡ REST API · 🔒 CORS Enabled · 📊 v2.0.0</div>
+            </div>
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+            <div class="grid">
+                <div class="card">
+                    <h3><i class="fas fa-users"></i> Alumnos</h3>
+                    <div class="endpoint"><span class="endpoint-method method-get">GET</span><span class="endpoint-url">/alumnos</span><div class="endpoint-desc">Obtener todos los alumnos</div></div>
+                    <div class="endpoint"><span class="endpoint-method method-get">GET</span><span class="endpoint-url">/alumnos/{id}</span><div class="endpoint-desc">Obtener un alumno por ID</div></div>
+                    <div class="endpoint"><span class="endpoint-method method-post">POST</span><span class="endpoint-url">/alumnos</span><div class="endpoint-desc">Crear nuevo alumno</div></div>
+                    <div class="endpoint"><span class="endpoint-method method-put">PUT</span><span class="endpoint-url">/alumnos/{id}</span><div class="endpoint-desc">Actualizar alumno</div></div>
+                    <div class="endpoint"><span class="endpoint-method method-delete">DELETE</span><span class="endpoint-url">/alumnos/{id}</span><div class="endpoint-desc">Eliminar alumno</div></div>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-file-alt"></i> Exámenes</h3>
+                    <div class="endpoint"><span class="endpoint-method method-get">GET</span><span class="endpoint-url">/examenes</span><div class="endpoint-desc">Obtener todos los exámenes</div></div>
+                    <div class="endpoint"><span class="endpoint-method method-post">POST</span><span class="endpoint-url">/examenes</span><div class="endpoint-desc">Crear nuevo examen</div></div>
+                    <div class="endpoint"><span class="endpoint-method method-put">PUT</span><span class="endpoint-url">/examenes/{id}</span><div class="endpoint-desc">Actualizar examen</div></div>
+                    <div class="endpoint"><span class="endpoint-method method-delete">DELETE</span><span class="endpoint-url">/examenes/{id}</span><div class="endpoint-desc">Eliminar examen</div></div>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-star"></i> Calificaciones</h3>
+                    <div class="endpoint"><span class="endpoint-method method-get">GET</span><span class="endpoint-url">/calificaciones/alumno/{id}</span><div class="endpoint-desc">Obtener calificaciones de un alumno</div></div>
+                    <div class="endpoint"><span class="endpoint-method method-post">POST</span><span class="endpoint-url">/calificaciones</span><div class="endpoint-desc">Guardar calificación</div></div>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-book"></i> Módulos</h3>
+                    <div class="endpoint"><span class="endpoint-method method-get">GET</span><span class="endpoint-url">/modulos</span><div class="endpoint-desc">Obtener todos los módulos</div></div>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-robot"></i> Inteligencia Artificial</h3>
+                    <div class="endpoint"><span class="endpoint-method method-post">POST</span><span class="endpoint-url">/corregir-examen</span><div class="endpoint-desc">Corregir examen con IA (Gemini)</div></div>
+                    <div class="endpoint"><span class="endpoint-method method-get">GET</span><span class="endpoint-url">/recomendaciones</span><div class="endpoint-desc">Recomendaciones para alumnos</div></div>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-cog"></i> Sistema</h3>
+                    <div class="endpoint"><span class="endpoint-method method-get">GET</span><span class="endpoint-url">/health</span><div class="endpoint-desc">Estado del servicio</div></div>
+                    <div class="endpoint"><span class="endpoint-method method-get">GET</span><span class="endpoint-url">/docs</span><div class="endpoint-desc">Documentación Swagger</div></div>
+                    <div class="endpoint"><span class="endpoint-method method-get">GET</span><span class="endpoint-url">/openapi.json</span><div class="endpoint-desc">Especificación OpenAPI</div></div>
+                </div>
+            </div>
+
+            <div class="services">
+                <h3><i class="fas fa-network-wired"></i> Microservicios Conectados</h3>
+                <div class="service-list">
+                    <span class="service-item">📊 eduscan-database</span>
+                    <span class="service-item">🧠 eduscan-ia</span>
+                    <span class="service-item">⚙️ eduscan-procesamiento</span>
+                    <span class="service-item">🗄️ EduScan_db (PostgreSQL)</span>
+                    <span class="service-item">🎨 eduscan-dashboard</span>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>EduScan API Gateway v2.0.0 · CORS habilitado · FastAPI</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+# ============================================
+# HEALTH CHECK
+# ============================================
+@app.get("/health")
+async def health():
+    return {"status": "healthy", "service": "gateway", "version": "2.0.0"}
+
+# ============================================
+# PROXY A OTROS SERVICIOS
+# ============================================
+@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def proxy(path: str, request: Request):
+    """Redirige las peticiones a los servicios correspondientes"""
+    
+    if path.startswith("alumnos") or path.startswith("examenes") or path.startswith("calificaciones") or path.startswith("modulos"):
+        service_url = DATABASE_URL
+    elif path.startswith("corregir") or path.startswith("recomendaciones"):
+        service_url = IA_URL
+    else:
+        return {"error": "Ruta no encontrada", "path": path}
+    
+    target_url = f"{service_url}/{path}"
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            if request.method == "GET":
+                resp = await client.get(target_url, params=request.query_params)
+            elif request.method == "POST":
+                body = await request.body()
+                resp = await client.post(target_url, content=body, headers={"Content-Type": "application/json"})
+            elif request.method == "PUT":
+                body = await request.body()
+                resp = await client.put(target_url, content=body, headers={"Content-Type": "application/json"})
+            elif request.method == "DELETE":
+                resp = await client.delete(target_url)
+            else:
+                return {"error": "Método no soportado"}
+            
+            return resp.json()
+        except Exception as e:
+            return {"error": str(e)}
