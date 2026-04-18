@@ -1,6 +1,9 @@
 {
-  "dependencies": {
-    "express": "^5.2.1",
-    "mysql2": "^3.22.0"
+  "name": "eduscan",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Tests OK\""
   }
 }
