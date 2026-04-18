@@ -30,7 +30,6 @@ async def corregir_examen_simple(
         image_bytes = await imagen.read()
         image_base64 = base64.b64encode(image_bytes).decode('utf-8')
         
-        # Preguntas de ejemplo (puedes personalizarlas)
         preguntas = [
             {"texto": "¿Cuánto es 2 + 2?", "respuesta_correcta": "4", "puntaje": 1},
             {"texto": "¿Cuánto es 5 x 3?", "respuesta_correcta": "15", "puntaje": 1},
@@ -40,7 +39,6 @@ async def corregir_examen_simple(
         respuestas_alumno = []
         
         if GEMINI_API_KEY:
-            # Usar Gemini real
             prompt = f"""Eres un profesor. Estas son las preguntas del examen:
 {json.dumps(preguntas, ensure_ascii=False)}
 
@@ -66,10 +64,8 @@ Devuelve SOLO JSON: {{"respuestas": ["respuesta1", "respuesta2", "respuesta3"]}}
                     result = json.loads(json_match.group())
                     respuestas_alumno = result.get("respuestas", [])
         else:
-            # Simulación
             respuestas_alumno = ["4", "15", "4"]
         
-        # Calcular puntaje
         puntaje_total = 0
         puntaje_maximo = 0
         detalles = []
