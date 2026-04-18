@@ -14,6 +14,40 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ============================================
+# DOCUMENTACIÓN MANUAL PARA SWAGGER
+# ============================================
+from fastapi import APIRouter
+
+router = APIRouter(tags=["Alumnos"])
+
+@router.get("/alumnos", summary="Obtener todos los alumnos")
+async def docs_alumnos():
+    """Obtiene la lista completa de alumnos"""
+    pass
+
+@router.get("/alumnos/{id}", summary="Obtener alumno por ID")
+async def docs_alumno_id():
+    """Obtiene un alumno específico por su ID"""
+    pass
+
+@router.post("/alumnos", summary="Crear nuevo alumno")
+async def docs_crear_alumno():
+    """Crea un nuevo alumno en el sistema"""
+    pass
+
+@router.get("/examenes", summary="Obtener todos los exámenes")
+async def docs_examenes():
+    """Obtiene la lista completa de exámenes"""
+    pass
+
+@router.post("/calificaciones", summary="Guardar calificación")
+async def docs_guardar_calificacion():
+    """Guarda una calificación para un alumno en un examen"""
+    pass
+
+app.include_router(router)
+
 # URLs de los servicios internos
 DATABASE_URL = os.environ.get('DATABASE_URL', 'https://eduscan-database.onrender.com')
 IA_URL = os.environ.get('IA_URL', 'https://eduscan-ia.onrender.com')
