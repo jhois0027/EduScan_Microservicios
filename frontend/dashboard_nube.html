@@ -2,595 +2,586 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduScan - Dashboard Completo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>EduScan - Dashboard con IA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
-            background: #f1f5f9;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
             min-height: 100vh;
             padding: 20px;
         }
-        .container { max-width: 1400px; margin: 0 auto; }
+        .container { max-width: 700px; margin: 0 auto; }
         
-        /* Header */
         .header {
-            background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%);
-            border-radius: 24px;
-            padding: 24px;
-            margin-bottom: 24px;
-            color: white;
-        }
-        .header h1 { font-size: 1.8rem; margin-bottom: 8px; }
-        .header p { opacity: 0.8; }
-        
-        /* Pestañas */
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-        .tab-btn {
-            padding: 12px 24px;
             background: white;
+            border-radius: 28px;
+            padding: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .header h1 { color: #4f46e5; margin-bottom: 8px; font-size: 1.8rem; }
+        .header p { color: #64748b; }
+        
+        .device-bar {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .device-btn {
+            padding: 10px 24px;
+            border-radius: 60px;
+            background: rgba(255,255,255,0.1);
+            color: white;
             border: none;
-            border-radius: 40px;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.2s;
         }
-        .tab-btn.active {
+        .device-btn.active {
+            background: white;
+            color: #4f46e5;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 28px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        label {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        select, button {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 12px;
+            border-radius: 60px;
+            border: 1px solid #e2e8f0;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+        
+        button {
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
             color: white;
-        }
-        
-        /* Tarjetas de estadísticas */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .stat-card {
-            background: white;
-            border-radius: 20px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .stat-card h3 { color: #64748b; font-size: 0.85rem; margin-bottom: 8px; }
-        .stat-card .value { font-size: 2rem; font-weight: 800; color: #4f46e5; }
-        
-        /* Tablas */
-        .table-container {
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .table-header {
-            padding: 16px 20px;
-            background: #f8fafc;
-            font-weight: 600;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        th { background: #f8fafc; font-weight: 600; }
-        
-        .badge {
-            padding: 4px 10px;
-            border-radius: 40px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        .badge-excellent { background: #d1fae5; color: #065f46; }
-        .badge-good { background: #dbeafe; color: #1e40af; }
-        .badge-average { background: #fed7aa; color: #9a3412; }
-        .badge-low { background: #fee2e2; color: #991b1b; }
-        
-        .btn {
-            padding: 8px 16px;
-            border-radius: 40px;
             border: none;
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
+            transition: transform 0.2s;
         }
-        .btn-primary { background: #4f46e5; color: white; }
-        .btn-secondary { background: #e2e8f0; color: #475569; }
+        button:hover { transform: scale(1.02); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
         
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        
-        .progress-bar {
-            background: #e2e8f0;
-            border-radius: 10px;
-            height: 8px;
+        .camera-preview {
+            background: #000;
+            border-radius: 24px;
             overflow: hidden;
+            margin-bottom: 16px;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .progress-fill {
-            background: linear-gradient(90deg, #6366f1, #8b5cf6);
-            height: 100%;
-            border-radius: 10px;
+        video, .preview-img {
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+        }
+        .camera-placeholder {
+            background: linear-gradient(135deg, #1e1b4b, #3730a3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+            color: white;
+            text-align: center;
+            width: 100%;
+            border-radius: 24px;
+        }
+        
+        .flex-row {
+            display: flex;
+            gap: 12px;
+        }
+        .flex-row button { flex: 1; }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+        .btn-success {
+            background: #10b981;
+        }
+        
+        .resultado {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 20px;
+            display: none;
+        }
+        .resultado.success { background: #d1fae5; color: #065f46; display: block; }
+        .resultado.error { background: #fee2e2; color: #991b1b; display: block; }
+        .resultado.loading { background: #e0e7ff; color: #3730a3; display: block; }
+        
+        .nota-final {
+            font-size: 3rem;
+            font-weight: 800;
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            z-index: 1000;
+            display: none;
+        }
+        
+        @media (max-width: 640px) {
+            .container { padding: 0; }
+            .flex-row { flex-direction: column; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>EduScan - Panel de Control</h1>
-            <p>Gestion de alumnos, modulos, examenes y calificaciones</p>
+            <h1><i class="fas fa-robot"></i> EduScan - Corrector IA</h1>
+            <p>Toma foto o sube imagen - IA con Gemini corrige automáticamente</p>
         </div>
 
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
-            <button class="tab-btn" data-tab="alumnos">Alumnos</button>
-            <button class="tab-btn" data-tab="modulos">Modulos</button>
-            <button class="tab-btn" data-tab="examenes">Examenes</button>
-            <button class="tab-btn" data-tab="calificaciones">Calificaciones</button>
+        <div class="device-bar">
+            <button class="device-btn active" data-device="auto">���️ Auto</button>
+            <button class="device-btn" data-device="mobile">��� Móvil</button>
+            <button class="device-btn" data-device="pc">��� PC</button>
         </div>
 
-        <!-- Tab Dashboard -->
-        <div id="tab-dashboard" class="tab-content active">
-            <div class="stats-grid">
-                <div class="stat-card"><h3>Total Alumnos</h3><div class="value" id="totalAlumnos">0</div></div>
-                <div class="stat-card"><h3>Total Modulos</h3><div class="value" id="totalModulos">0</div></div>
-                <div class="stat-card"><h3>Total Examenes</h3><div class="value" id="totalExamenes">0</div></div>
-                <div class="stat-card"><h3>Promedio General</h3><div class="value" id="promedioGeneral">0</div></div>
-            </div>
-
-            <div class="table-container">
-                <div class="table-header">Cuadro de Honor</div>
-                <table id="honorTable">
-                    <thead><tr><th>#</th><th>Nombre</th><th>Grado</th><th>Promedio</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-
-            <div class="table-container">
-                <div class="table-header">Progreso por Grado</div>
-                <div id="progresoGrados"></div>
-            </div>
+        <div class="card">
+            <label><i class="fas fa-user-graduate"></i> Alumno</label>
+            <select id="selectAlumno">
+                <option value="">-- Seleccionar alumno --</option>
+            </select>
+            
+            <label><i class="fas fa-file-alt"></i> Examen</label>
+            <select id="selectExamen">
+                <option value="">-- Seleccionar examen --</option>
+            </select>
         </div>
 
-        <!-- Tab Alumnos -->
-        <div id="tab-alumnos" class="tab-content">
-            <div class="table-container">
-                <div class="table-header">
-                    <span>Lista de Alumnos</span>
-                    <button class="btn btn-primary" onclick="agregarAlumno()">+ Agregar</button>
+        <div class="card">
+            <div class="camera-preview" id="cameraPreview">
+                <div class="camera-placeholder" id="cameraPlaceholder">
+                    <i class="fas fa-camera" style="font-size: 48px; margin-bottom: 16px;"></i>
+                    <p>Haz clic en "Abrir Camara" o "Subir Imagen"</p>
                 </div>
-                <table id="alumnosTable">
-                    <thead><tr><th>ID</th><th>Nombre</th><th>Grado</th><th>Promedio</th><th>Acciones</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+                <video id="cameraVideo" autoplay playsinline style="display:none; width:100%;"></video>
+                <canvas id="cameraCanvas" style="display:none;"></canvas>
+                <img id="previewImg" class="preview-img" style="display:none;">
             </div>
+
+            <div class="flex-row">
+                <button id="btnAbrirCamara"><i class="fas fa-camera"></i> Abrir Camara</button>
+                <button id="btnCerrarCamara" class="btn-secondary" style="display:none;"><i class="fas fa-stop"></i> Cerrar</button>
+                <button id="btnSubirImagen" class="btn-secondary"><i class="fas fa-upload"></i> Subir Imagen</button>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" style="display:none;">
+
+            <button id="btnCorregir" class="btn-success" disabled><i class="fas fa-magic"></i> Corregir con Gemini IA</button>
+            <button id="btnGuardar" class="btn-success" style="background:#10b981; display:none;"><i class="fas fa-save"></i> Guardar Calificacion</button>
         </div>
 
-        <!-- Tab Modulos -->
-        <div id="tab-modulos" class="tab-content">
-            <div class="table-container">
-                <div class="table-header">
-                    <span>Modulos por Grado</span>
-                    <button class="btn btn-primary" onclick="agregarModulo()">+ Agregar</button>
-                </div>
-                <div id="modulosList"></div>
-            </div>
-        </div>
-
-        <!-- Tab Examenes -->
-        <div id="tab-examenes" class="tab-content">
-            <div class="table-container">
-                <div class="table-header">
-                    <span>Examenes</span>
-                    <button class="btn btn-primary" onclick="agregarExamen()">+ Agregar</button>
-                </div>
-                <table id="examenesTable">
-                    <thead><tr><th>ID</th><th>Titulo</th><th>Modulo</th><th>Grado</th><th>Fecha</th><th>Acciones</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Tab Calificaciones -->
-        <div id="tab-calificaciones" class="tab-content">
-            <div class="table-container">
-                <div class="table-header">Calificaciones por Alumno</div>
-                <select id="selectAlumnoCalif" class="btn-secondary" style="padding: 8px 16px; margin: 10px;">
-                    <option value="">Seleccionar alumno</option>
-                </select>
-                <table id="calificacionesTable">
-                    <thead><tr><th>Examen</th><th>Nota</th><th>Fecha</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
+        <div id="resultadoArea" class="resultado"></div>
     </div>
+
+    <div id="toast" class="toast"></div>
 
     <script>
         // ============================================
-        // DATOS DE EJEMPLO
+        // CONFIGURACION CON GEMINI API
         // ============================================
+        const GEMINI_API_KEY = 'TU_API_KEY_AQUI';  // ��� CAMBIA ESTO POR TU API KEY DE GEMINI
+        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
         
-        // Alumnos (15 alumnos)
-        let alumnos = [
-            { id: 1, nombre: "Valentina Rojas", grado: 11, promedio: 98 },
-            { id: 2, nombre: "Mateo Herrera", grado: 10, promedio: 85 },
-            { id: 3, nombre: "Sofia Ramirez", grado: 11, promedio: 96 },
-            { id: 4, nombre: "Lucas Mendoza", grado: 9, promedio: 72 },
-            { id: 5, nombre: "Isabella Torres", grado: 11, promedio: 100 },
-            { id: 6, nombre: "Samuel Gomez", grado: 8, promedio: 78 },
-            { id: 7, nombre: "Camila Ortiz", grado: 10, promedio: 92 },
-            { id: 8, nombre: "Diego Fernandez", grado: 7, promedio: 68 },
-            { id: 9, nombre: "Lucia Mendez", grado: 9, promedio: 88 },
-            { id: 10, nombre: "Javier Castro", grado: 6, promedio: 75 },
-            { id: 11, nombre: "Daniela Paz", grado: 5, promedio: 82 },
-            { id: 12, nombre: "Andres Silva", grado: 4, promedio: 71 },
-            { id: 13, nombre: "Carolina Reyes", grado: 3, promedio: 94 },
-            { id: 14, nombre: "Felipe Munoz", grado: 2, promedio: 67 },
-            { id: 15, nombre: "Natalia Herrera", grado: 1, promedio: 89 }
-        ];
-        
-        // Modulos por grado
-        let modulos = [
-            { id: 1, nombre: "Matematicas", grado: 11, descripcion: "Algebra y calculo" },
-            { id: 2, nombre: "Espanol", grado: 11, descripcion: "Literatura" },
-            { id: 3, nombre: "Ciencias", grado: 10, descripcion: "Biologia y quimica" },
-            { id: 4, nombre: "Historia", grado: 9, descripcion: "Historia de Colombia" },
-            { id: 5, nombre: "Ingles", grado: 10, descripcion: "Ingles tecnico" },
-            { id: 6, nombre: "Fisica", grado: 11, descripcion: "Fisica general" },
-            { id: 7, nombre: "Artes", grado: 8, descripcion: "Educacion artistica" },
-            { id: 8, nombre: "Educacion Fisica", grado: 8, descripcion: "Deportes" }
-        ];
-        
-        // Examenes
-        let examenes = [
-            { id: 1, titulo: "Examen Parcial Matematicas", id_modulo: 1, grado: 11, fecha: "2024-03-15" },
-            { id: 2, titulo: "Examen Historia", id_modulo: 4, grado: 9, fecha: "2024-03-18" },
-            { id: 3, titulo: "Evaluacion Ingles", id_modulo: 5, grado: 10, fecha: "2024-03-20" },
-            { id: 4, titulo: "Examen Ciencias", id_modulo: 3, grado: 10, fecha: "2024-03-22" }
-        ];
-        
-        // Calificaciones (alumno, examen, nota)
-        let calificaciones = [
-            { id_alumno: 1, id_examen: 1, nota: 95, fecha: "2024-03-15" },
-            { id_alumno: 1, id_examen: 2, nota: 88, fecha: "2024-03-18" },
-            { id_alumno: 2, id_examen: 1, nota: 82, fecha: "2024-03-15" },
-            { id_alumno: 3, id_examen: 1, nota: 98, fecha: "2024-03-15" },
-            { id_alumno: 4, id_examen: 2, nota: 70, fecha: "2024-03-18" },
-            { id_alumno: 5, id_examen: 1, nota: 100, fecha: "2024-03-15" },
-            { id_alumno: 6, id_examen: 3, nota: 78, fecha: "2024-03-20" },
-            { id_alumno: 7, id_examen: 3, nota: 92, fecha: "2024-03-20" }
-        ];
-        
+        const API_URL = 'https://eduscan-gateway.onrender.com';
+        let alumnos = [];
+        let examenes = [];
+        let preguntas = [];
+        let currentImageData = null;
+        let cameraStream = null;
+        let ultimaCorreccion = null;
+        let currentDevice = 'auto';
+
         // ============================================
-        // FUNCIONES DE GUARDADO
+        // CARGAR DATOS DESDE LA API
         // ============================================
-        
-        function guardarTodo() {
-            localStorage.setItem('eduscan_alumnos', JSON.stringify(alumnos));
-            localStorage.setItem('eduscan_modulos', JSON.stringify(modulos));
-            localStorage.setItem('eduscan_examenes', JSON.stringify(examenes));
-            localStorage.setItem('eduscan_calificaciones', JSON.stringify(calificaciones));
+        async function cargarAlumnos() {
+            try {
+                const response = await fetch(`${API_URL}/alumnos`);
+                const data = await response.json();
+                alumnos = data.alumnos || [];
+            } catch (error) {
+                console.error("Error cargando alumnos:", error);
+                const saved = localStorage.getItem('eduscan_alumnos');
+                alumnos = saved ? JSON.parse(saved) : [];
+            }
+            actualizarSelectores();
         }
         
-        function cargarTodo() {
-            const savedAlumnos = localStorage.getItem('eduscan_alumnos');
-            const savedModulos = localStorage.getItem('eduscan_modulos');
-            const savedExamenes = localStorage.getItem('eduscan_examenes');
-            const savedCalif = localStorage.getItem('eduscan_calificaciones');
+        async function cargarExamenes() {
+            try {
+                const response = await fetch(`${API_URL}/examenes`);
+                const data = await response.json();
+                examenes = data.examenes || [];
+            } catch (error) {
+                const saved = localStorage.getItem('eduscan_examenes');
+                examenes = saved ? JSON.parse(saved) : [];
+            }
+            actualizarSelectores();
+        }
+        
+        async function cargarPreguntas(idExamen) {
+            try {
+                const response = await fetch(`${API_URL}/preguntas/examen/${idExamen}`);
+                const data = await response.json();
+                preguntas = data.preguntas || [];
+            } catch (error) {
+                // Preguntas de ejemplo
+                preguntas = [
+                    { id: 1, texto: "¿Cuánto es 2 + 2?", respuesta_correcta: "4", puntaje: 1 },
+                    { id: 2, texto: "¿Cuánto es 5 x 3?", respuesta_correcta: "15", puntaje: 1 },
+                    { id: 3, texto: "¿Cuál es la raíz cuadrada de 16?", respuesta_correcta: "4", puntaje: 1 }
+                ];
+            }
+        }
+        
+        function actualizarSelectores() {
+            const selectAlumno = document.getElementById('selectAlumno');
+            selectAlumno.innerHTML = '<option value="">-- Seleccionar alumno --</option>' + 
+                alumnos.map(a => `<option value="${a.id_alumno}">${a.nombre} (${a.grado}°)</option>`).join('');
             
-            if (savedAlumnos) alumnos = JSON.parse(savedAlumnos);
-            if (savedModulos) modulos = JSON.parse(savedModulos);
-            if (savedExamenes) examenes = JSON.parse(savedExamenes);
-            if (savedCalif) calificaciones = JSON.parse(savedCalif);
+            const selectExamen = document.getElementById('selectExamen');
+            selectExamen.innerHTML = '<option value="">-- Seleccionar examen --</option>' + 
+                examenes.map(e => `<option value="${e.id_examen}">${e.titulo} (${e.grado}°)</option>`).join('');
+        }
+        
+        function mostrarToast(mensaje, esError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = mensaje;
+            toast.style.backgroundColor = esError ? '#ef4444' : '#10b981';
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
         }
         
         // ============================================
-        // RENDERIZADO
+        // CAMARA (CORREGIDA)
         // ============================================
-        
-        function getModuloNombre(id_modulo) {
-            const mod = modulos.find(m => m.id === id_modulo);
-            return mod ? mod.nombre : "Desconocido";
+        async function abrirCamara() {
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error("Tu navegador no soporta la cámara");
+                }
+                
+                const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                const constraints = isMobile ? 
+                    { video: { facingMode: { exact: "environment" } } } : 
+                    { video: true };
+                
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                const video = document.getElementById('cameraVideo');
+                video.srcObject = stream;
+                video.setAttribute("playsinline", true);
+                await video.play();
+                cameraStream = stream;
+                
+                document.getElementById('cameraPlaceholder').style.display = 'none';
+                document.getElementById('previewImg').style.display = 'none';
+                video.style.display = 'block';
+                document.getElementById('btnAbrirCamara').style.display = 'none';
+                document.getElementById('btnCerrarCamara').style.display = 'inline-block';
+                
+                mostrarToast("Cámara activada. Tomando foto en 2 segundos...");
+                
+                setTimeout(() => {
+                    if (video.videoWidth > 0) {
+                        tomarFoto();
+                    } else {
+                        mostrarToast("Error: La cámara no se inició correctamente", true);
+                    }
+                }, 2000);
+                
+            } catch (err) {
+                mostrarToast("Error al abrir cámara: " + err.message, true);
+            }
         }
         
-        function getPromedioAlumno(id_alumno) {
-            const notas = calificaciones.filter(c => c.id_alumno === id_alumno);
-            if (notas.length === 0) return 0;
-            const suma = notas.reduce((s, c) => s + c.nota, 0);
-            return Math.round(suma / notas.length);
+        function tomarFoto() {
+            const video = document.getElementById('cameraVideo');
+            const canvas = document.getElementById('cameraCanvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            currentImageData = canvas.toDataURL('image/jpeg', 0.8);
+            
+            const previewImg = document.getElementById('previewImg');
+            previewImg.src = currentImageData;
+            previewImg.style.display = 'block';
+            video.style.display = 'none';
+            
+            document.getElementById('btnCorregir').disabled = false;
+            document.getElementById('resultadoArea').className = 'resultado loading';
+            document.getElementById('resultadoArea').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Foto tomada. Presiona "Corregir con Gemini IA"';
+            
+            cerrarCamara();
         }
         
-        function actualizarPromedios() {
-            alumnos.forEach(a => {
-                a.promedio = getPromedioAlumno(a.id);
-            });
+        function cerrarCamara() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(t => t.stop());
+                cameraStream = null;
+            }
+            document.getElementById('cameraVideo').style.display = 'none';
+            document.getElementById('btnAbrirCamara').style.display = 'inline-block';
+            document.getElementById('btnCerrarCamara').style.display = 'none';
         }
         
-        function renderizarTodo() {
-            actualizarPromedios();
-            guardarTodo();
-            
-            // Estadisticas
-            document.getElementById('totalAlumnos').innerText = alumnos.length;
-            document.getElementById('totalModulos').innerText = modulos.length;
-            document.getElementById('totalExamenes').innerText = examenes.length;
-            const promedioGeneral = alumnos.length ? Math.round(alumnos.reduce((s,a) => s + a.promedio, 0) / alumnos.length) : 0;
-            document.getElementById('promedioGeneral').innerText = promedioGeneral;
-            
-            // Cuadro de Honor
-            const honor = [...alumnos].sort((a,b) => b.promedio - a.promedio).slice(0,5);
-            const honorBody = document.querySelector('#honorTable tbody');
-            honorBody.innerHTML = honor.map((a,i) => `
-                <tr><td>${i+1}</td><td>${a.nombre}</td><td>${a.grado}°</td><td>${a.promedio}%</td></tr>
-            `).join('');
-            
-            // Progreso por grado
-            const progresoDiv = document.getElementById('progresoGrados');
-            const grados = [1,2,3,4,5,6,7,8,9,10,11];
-            progresoDiv.innerHTML = grados.map(g => {
-                const alumnosGrado = alumnos.filter(a => a.grado === g);
-                const promedio = alumnosGrado.length ? Math.round(alumnosGrado.reduce((s,a) => s + a.promedio, 0) / alumnosGrado.length) : 0;
-                return `
-                    <div style="padding: 12px 20px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <span>${g}° Grado (${alumnosGrado.length} alumnos)</span>
-                            <span>${promedio}%</span>
-                        </div>
-                        <div class="progress-bar"><div class="progress-fill" style="width: ${promedio}%"></div></div>
-                    </div>
-                `;
-            }).join('');
-            
-            // Tabla Alumnos
-            const alumnosBody = document.querySelector('#alumnosTable tbody');
-            alumnosBody.innerHTML = alumnos.map(a => {
-                let badgeClass = a.promedio >= 90 ? 'badge-excellent' : a.promedio >= 75 ? 'badge-good' : a.promedio >= 60 ? 'badge-average' : 'badge-low';
-                return `
-                    <tr>
-                        <td>${a.id}</td>
-                        <td>${a.nombre}</td>
-                        <td>${a.grado}°</td>
-                        <td><span class="badge ${badgeClass}">${a.promedio}%</span></td>
-                        <td>
-                            <button class="btn-secondary" style="padding:4px 8px;" onclick="editarAlumno(${a.id})">Editar</button>
-                            <button class="btn-secondary" style="padding:4px 8px; background:#fee2e2;" onclick="eliminarAlumno(${a.id})">Eliminar</button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-            
-            // Modulos
-            const modulosDiv = document.getElementById('modulosList');
-            modulosDiv.innerHTML = grados.map(g => {
-                const modulosGrado = modulos.filter(m => m.grado === g);
-                if (modulosGrado.length === 0) return '';
-                return `
-                    <div class="table-container" style="margin-top: 15px;">
-                        <div class="table-header">${g}° Grado</div>
-                        <table>
-                            <tbody>
-                                ${modulosGrado.map(m => `
-                                    <tr>
-                                        <td>📚 ${m.nombre}</td>
-                                        <td>${m.descripcion}</td>
-                                        <td>
-                                            <button onclick="editarModulo(${m.id})">✏️</button>
-                                            <button onclick="eliminarModulo(${m.id})">🗑️</button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-            }).join('');
-            
-            // Examenes
-            const examenesBody = document.querySelector('#examenesTable tbody');
-            examenesBody.innerHTML = examenes.map(e => `
-                <tr>
-                    <td>${e.id}</td>
-                    <td>${e.titulo}</td>
-                    <td>${getModuloNombre(e.id_modulo)}</td>
-                    <td>${e.grado}°</td>
-                    <td>${e.fecha}</td>
-                    <td>
-                        <button onclick="editarExamen(${e.id})">✏️</button>
-                        <button onclick="eliminarExamen(${e.id})">🗑️</button>
-                    </td>
-                </tr>
-            `).join('');
-            
-            // Selector de alumno para calificaciones
-            const selectAlumno = document.getElementById('selectAlumnoCalif');
-            selectAlumno.innerHTML = '<option value="">Seleccionar alumno</option>' + 
-                alumnos.map(a => `<option value="${a.id}">${a.nombre} (${a.grado}°)</option>`).join('');
+        function subirImagen() {
+            document.getElementById('fileInput').click();
         }
         
-        function cargarCalificacionesAlumno() {
-            const alumnoId = document.getElementById('selectAlumnoCalif').value;
-            if (!alumnoId) return;
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                currentImageData = ev.target.result;
+                const previewImg = document.getElementById('previewImg');
+                previewImg.src = currentImageData;
+                previewImg.style.display = 'block';
+                document.getElementById('cameraPlaceholder').style.display = 'none';
+                document.getElementById('cameraVideo').style.display = 'none';
+                document.getElementById('btnCorregir').disabled = false;
+                document.getElementById('resultadoArea').className = 'resultado loading';
+                document.getElementById('resultadoArea').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Imagen cargada. Presiona "Corregir con Gemini IA"';
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // ============================================
+        // CORRECCION CON GEMINI IA
+        // ============================================
+        async function extraerTextoConGemini(imageBase64) {
+            const prompt = `Eres un profesor. Extrae SOLO las respuestas del alumno de esta imagen de examen. 
+            Devuelve SOLO las respuestas en formato JSON: {"respuestas": ["respuesta1", "respuesta2", ...]}
+            Si no ves una respuesta clara, escribe "No respondida".`;
             
-            const notasAlumno = calificaciones.filter(c => c.id_alumno == alumnoId);
-            const alumno = alumnos.find(a => a.id == alumnoId);
+            const requestBody = {
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        { inline_data: { mime_type: "image/jpeg", data: imageBase64.split(',')[1] } }
+                    ]
+                }]
+            };
             
-            const tbody = document.querySelector('#calificacionesTable tbody');
-            if (notasAlumno.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3">No hay calificaciones registradas</td></tr>';
+            try {
+                const response = await fetch(GEMINI_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+                const data = await response.json();
+                const texto = data.candidates[0].content.parts[0].text;
+                const jsonMatch = texto.match(/\{.*\}/s);
+                if (jsonMatch) {
+                    return JSON.parse(jsonMatch[0]).respuestas;
+                }
+                return [];
+            } catch (error) {
+                console.error("Error con Gemini:", error);
+                return null;
+            }
+        }
+        
+        async function corregirExamen() {
+            const alumnoId = document.getElementById('selectAlumno').value;
+            const examenId = document.getElementById('selectExamen').value;
+            
+            if (!alumnoId || !examenId) {
+                mostrarToast('Selecciona un alumno y un examen', true);
+                return;
+            }
+            if (!currentImageData) {
+                mostrarToast('Toma una foto o sube una imagen', true);
                 return;
             }
             
-            tbody.innerHTML = notasAlumno.map(c => {
-                const examen = examenes.find(e => e.id === c.id_examen);
-                return `
-                    <tr>
-                        <td>${examen ? examen.titulo : 'Desconocido'}</td>
-                        <td><span class="badge ${c.nota >= 70 ? 'badge-good' : 'badge-average'}">${c.nota}%</span></td>
-                        <td>${c.fecha}</td>
-                    </tr>
-                `;
-            }).join('');
-        }
-        
-        // ============================================
-        // CRUD ALUMNOS
-        // ============================================
-        
-        function agregarAlumno() {
-            const nombre = prompt("Nombre del alumno:");
-            const grado = parseInt(prompt("Grado (1-11):"));
-            if (nombre && grado >= 1 && grado <= 11) {
-                const newId = Math.max(...alumnos.map(a=>a.id), 0) + 1;
-                alumnos.push({ id: newId, nombre: nombre, grado: grado, promedio: 0 });
-                guardarTodo();
-                renderizarTodo();
-            }
-        }
-        
-        function editarAlumno(id) {
-            const a = alumnos.find(a => a.id === id);
-            if (a) {
-                const nombre = prompt("Nuevo nombre:", a.nombre);
-                const grado = parseInt(prompt("Nuevo grado:", a.grado));
-                if (nombre && grado >= 1 && grado <= 11) {
-                    a.nombre = nombre;
-                    a.grado = grado;
-                    guardarTodo();
-                    renderizarTodo();
-                }
-            }
-        }
-        
-        function eliminarAlumno(id) {
-            if (confirm("Eliminar este alumno?")) {
-                alumnos = alumnos.filter(a => a.id !== id);
-                calificaciones = calificaciones.filter(c => c.id_alumno !== id);
-                guardarTodo();
-                renderizarTodo();
-            }
-        }
-        
-        // ============================================
-        // CRUD MODULOS
-        // ============================================
-        
-        function agregarModulo() {
-            const nombre = prompt("Nombre del modulo:");
-            const grado = parseInt(prompt("Grado (1-11):"));
-            const descripcion = prompt("Descripcion:");
-            if (nombre && grado >= 1 && grado <= 11) {
-                const newId = Math.max(...modulos.map(m=>m.id), 0) + 1;
-                modulos.push({ id: newId, nombre: nombre, grado: grado, descripcion: descripcion || "" });
-                guardarTodo();
-                renderizarTodo();
-            }
-        }
-        
-        function editarModulo(id) {
-            const m = modulos.find(m => m.id === id);
-            if (m) {
-                const nombre = prompt("Nuevo nombre:", m.nombre);
-                const grado = parseInt(prompt("Nuevo grado:", m.grado));
-                const descripcion = prompt("Nueva descripcion:", m.descripcion);
-                if (nombre && grado >= 1 && grado <= 11) {
-                    m.nombre = nombre;
-                    m.grado = grado;
-                    m.descripcion = descripcion || "";
-                    guardarTodo();
-                    renderizarTodo();
-                }
-            }
-        }
-        
-        function eliminarModulo(id) {
-            if (confirm("Eliminar este modulo?")) {
-                modulos = modulos.filter(m => m.id !== id);
-                examenes = examenes.filter(e => e.id_modulo !== id);
-                guardarTodo();
-                renderizarTodo();
-            }
-        }
-        
-        // ============================================
-        // CRUD EXAMENES
-        // ============================================
-        
-        function agregarExamen() {
-            const titulo = prompt("Titulo del examen:");
-            const grado = parseInt(prompt("Grado:"));
-            const moduloNombre = prompt("Modulo (nombre):");
-            const fecha = prompt("Fecha (YYYY-MM-DD):");
+            const resultDiv = document.getElementById('resultadoArea');
+            resultDiv.className = 'resultado loading';
+            resultDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando a Gemini IA para corrección...';
             
-            if (titulo && grado && moduloNombre && fecha) {
-                let modulo = modulos.find(m => m.nombre.toLowerCase() === moduloNombre.toLowerCase() && m.grado === grado);
-                if (!modulo) {
-                    const newIdMod = Math.max(...modulos.map(m=>m.id), 0) + 1;
-                    modulo = { id: newIdMod, nombre: moduloNombre, grado: grado, descripcion: "" };
-                    modulos.push(modulo);
-                }
-                const newId = Math.max(...examenes.map(e=>e.id), 0) + 1;
-                examenes.push({ id: newId, titulo: titulo, id_modulo: modulo.id, grado: grado, fecha: fecha });
-                guardarTodo();
-                renderizarTodo();
+            await cargarPreguntas(examenId);
+            
+            const respuestasAlumno = await extraerTextoConGemini(currentImageData);
+            
+            if (!respuestasAlumno) {
+                resultDiv.className = 'resultado error';
+                resultDiv.innerHTML = '<strong>Error:</strong> No se pudo extraer texto de la imagen. Asegúrate de que la imagen sea clara.';
+                return;
             }
-        }
-        
-        function editarExamen(id) {
-            const e = examenes.find(e => e.id === id);
-            if (e) {
-                const titulo = prompt("Nuevo titulo:", e.titulo);
-                const grado = parseInt(prompt("Nuevo grado:", e.grado));
-                const fecha = prompt("Nueva fecha:", e.fecha);
-                if (titulo && grado) {
-                    e.titulo = titulo;
-                    e.grado = grado;
-                    e.fecha = fecha;
-                    guardarTodo();
-                    renderizarTodo();
-                }
+            
+            // Calcular puntaje
+            let puntajeTotal = 0;
+            let puntajeMaximo = 0;
+            let detalles = [];
+            
+            for (let i = 0; i < preguntas.length; i++) {
+                const pregunta = preguntas[i];
+                const respuestaAlumno = respuestasAlumno[i] || "No respondida";
+                const esCorrecta = respuestaAlumno.toLowerCase().trim() === pregunta.respuesta_correcta.toLowerCase().trim();
+                const puntajeObtenido = esCorrecta ? pregunta.puntaje : 0;
+                
+                puntajeTotal += puntajeObtenido;
+                puntajeMaximo += pregunta.puntaje;
+                
+                detalles.push({
+                    pregunta: pregunta.texto,
+                    respuesta_alumno: respuestaAlumno,
+                    respuesta_correcta: pregunta.respuesta_correcta,
+                    puntaje_obtenido: puntajeObtenido,
+                    puntaje_maximo: pregunta.puntaje,
+                    correcta: esCorrecta
+                });
             }
-        }
-        
-        function eliminarExamen(id) {
-            if (confirm("Eliminar este examen?")) {
-                examenes = examenes.filter(e => e.id !== id);
-                calificaciones = calificaciones.filter(c => c.id_examen !== id);
-                guardarTodo();
-                renderizarTodo();
-            }
-        }
-        
-        // ============================================
-        // INICIALIZACION
-        // ============================================
-        
-        cargarTodo();
-        renderizarTodo();
-        
-        // Eventos
-        document.getElementById('selectAlumnoCalif').addEventListener('change', cargarCalificacionesAlumno);
-        
-        // Pestañas
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-                document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
-                if (btn.dataset.tab === 'calificaciones') {
-                    cargarCalificacionesAlumno();
-                }
+            
+            const porcentaje = Math.round((puntajeTotal / puntajeMaximo) * 100);
+            const alumno = alumnos.find(a => a.id_alumno == alumnoId);
+            const examen = examenes.find(e => e.id_examen == examenId);
+            
+            ultimaCorreccion = { nota: porcentaje, examenId: examenId, alumnoId: alumnoId, detalles: detalles };
+            
+            let detallesHtml = '<div style="margin-top:15px;"><strong>��� Detalle de respuestas:</strong>';
+            detalles.forEach(d => {
+                const color = d.correcta ? '#d1fae5' : '#fee2e2';
+                detallesHtml += `
+                    <div style="background:${color}; border-radius:12px; padding:10px; margin:8px 0;">
+                        <strong>${d.pregunta}</strong><br>
+                        Respuesta: ${d.respuesta_alumno}<br>
+                        Esperado: ${d.respuesta_correcta}<br>
+                        Puntaje: ${d.puntaje_obtenido}/${d.puntaje_maximo}
+                    </div>
+                `;
             });
+            detallesHtml += '</div>';
+            
+            let colorBg = porcentaje >= 70 ? '#d1fae5' : porcentaje >= 50 ? '#fed7aa' : '#fee2e2';
+            resultDiv.className = 'resultado success';
+            resultDiv.innerHTML = `
+                <div style="text-align:center;">
+                    <div class="nota-final">${porcentaje}%</div>
+                    <p><strong>${alumno?.nombre || 'Alumno'}</strong> - ${examen?.titulo || 'Examen'}</p>
+                    <p>Puntaje: ${puntajeTotal}/${puntajeMaximo}</p>
+                    ${detallesHtml}
+                    <button id="btnGuardarResultado" class="btn-success" style="margin-top:15px;"><i class="fas fa-save"></i> Guardar Calificacion</button>
+                </div>
+            `;
+            document.getElementById('btnGuardarResultado').onclick = guardarCalificacion;
+            document.getElementById('btnGuardar').style.display = 'inline-block';
+        }
+        
+        async function guardarCalificacion() {
+            if (!ultimaCorreccion) {
+                mostrarToast('No hay correccion para guardar', true);
+                return;
+            }
+            
+            try {
+                await fetch(`${API_URL}/calificaciones`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id_alumno: parseInt(ultimaCorreccion.alumnoId),
+                        id_examen: parseInt(ultimaCorreccion.examenId),
+                        nota: ultimaCorreccion.nota
+                    })
+                });
+                mostrarToast(`✅ Calificación guardada: ${ultimaCorreccion.nota}%`);
+            } catch (error) {
+                // Fallback local
+                let calificaciones = JSON.parse(localStorage.getItem('eduscan_calificaciones') || '[]');
+                calificaciones.push({
+                    id_alumno: parseInt(ultimaCorreccion.alumnoId),
+                    id_examen: parseInt(ultimaCorreccion.examenId),
+                    nota: ultimaCorreccion.nota,
+                    fecha: new Date().toISOString().split('T')[0]
+                });
+                localStorage.setItem('eduscan_calificaciones', JSON.stringify(calificaciones));
+                mostrarToast(`✅ Calificación guardada LOCALMENTE: ${ultimaCorreccion.nota}%`);
+            }
+            
+            document.getElementById('btnGuardar').style.display = 'none';
+            document.getElementById('btnCorregir').disabled = true;
+            currentImageData = null;
+            await cargarAlumnos();
+        }
+        
+        // ============================================
+        // RESPONSIVE
+        // ============================================
+        function ajustarPorDispositivo() {
+            const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const usarMobile = currentDevice === 'mobile' || (currentDevice === 'auto' && isMobile);
+            
+            if (usarMobile) {
+                document.querySelector('.container').style.maxWidth = '100%';
+                document.body.style.padding = '10px';
+            } else {
+                document.querySelector('.container').style.maxWidth = '700px';
+                document.body.style.padding = '20px';
+            }
+        }
+        
+        // ============================================
+        // EVENTOS E INICIALIZACION
+        // ============================================
+        document.getElementById('btnAbrirCamara').onclick = abrirCamara;
+        document.getElementById('btnCerrarCamara').onclick = cerrarCamara;
+        document.getElementById('btnSubirImagen').onclick = subirImagen;
+        document.getElementById('fileInput').onchange = handleImageUpload;
+        document.getElementById('btnCorregir').onclick = corregirExamen;
+        document.getElementById('btnGuardar').onclick = guardarCalificacion;
+        
+        document.querySelectorAll('.device-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentDevice = btn.dataset.device;
+                ajustarPorDispositivo();
+            };
         });
+        
+        // Inicializar
+        cargarAlumnos();
+        cargarExamenes();
+        ajustarPorDispositivo();
     </script>
 </body>
 </html>
