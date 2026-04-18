@@ -127,10 +127,6 @@ Incluye:
 * 🌐 Plataforma desplegada en Render
 * 🐳 Uso de Docker para contenedores
 
----
-
-## 📁 Estructura del Proyecto
-
 
 ---
 
@@ -162,5 +158,9 @@ Optimizar el proceso de evaluación académica mediante Inteligencia Artificial,
 
 ---
 
+El proyecto está organizado bajo una arquitectura de microservicios, donde cada componente cumple una función específica:
 
-Proyecto desarrollado como solución tecnológica educativa usando IA, microservicios y despliegue en la nube.
+- backend → API Gateway y lógica central
+- eduscan-ia → procesamiento inteligente de exámenes
+- frontend → interfaz para docentes
+- kubernetes → despliegue escalable

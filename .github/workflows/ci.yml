@@ -9,12 +9,14 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:  # ← AGREGA ESTA LÍNEA
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # ← Y ESTA LÍNEA
     
     steps:
-    - uses: actions/checkout@v4  # ✅ CAMBIADO: antes era @v3
+    - uses: actions/checkout@v4
     
     - name: Setup Python
-      uses: actions/setup-python@v5  # ✅ CAMBIADO: antes era @v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     
@@ -28,7 +30,7 @@ jobs:
         pytest tests/ -v --cov=. --cov-report=xml || echo "No tests found"
     
     - name: Upload coverage
-      uses: codecov/codecov-action@v5  # ✅ CAMBIADO: antes era @v3
+      uses: codecov/codecov-action@v5
       with:
         file: ./coverage.xml
         fail_ci_if_error: false
