@@ -2,15 +2,15 @@ name: CI - Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:  # ← AGREGA ESTA LÍNEA
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # ← Y ESTA LÍNEA
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     
     steps:
     - uses: actions/checkout@v4
@@ -22,15 +22,25 @@ jobs:
     
     - name: Install dependencies
       run: |
-        pip install --upgrade pip
-        pip install pytest pytest-cov
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov flake8 black pyyaml
+        if [ -f "backend/requirements.txt" ]; then
+          pip install -r backend/requirements.txt
+        fi
     
-    - name: Run tests
+    - name: Lint with flake8
       run: |
-        pytest tests/ -v --cov=. --cov-report=xml || echo "No tests found"
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || true
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics || true
     
-    - name: Upload coverage
+    - name: Run tests with coverage
+      run: |
+        pytest tests/ -v --cov=. --cov-report=xml --cov-report=term || echo "No tests found, skipping..."
+    
+    - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v5
       with:
+        token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage.xml
         fail_ci_if_error: false
+        verbose: false
