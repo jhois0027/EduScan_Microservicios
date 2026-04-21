@@ -4,7 +4,7 @@ Inicializar base de datos PostgreSQL en Render
 import psycopg2
 import os
 import sys
-from urllib.parse import urlparse
+from datetime import datetime
 
 # Obtener URL de base de datos
 DATABASE_URL = os.getenv('DATABASE_URL')
@@ -14,20 +14,25 @@ if not DATABASE_URL:
     print("Ì≥ù Agrega: DATABASE_URL=postgresql://...")
     sys.exit(1)
 
-print(f"Ì≥° Conectando a: {DATABASE_URL.replace('://', '://***:***@')}")
+# Ocultar credenciales en logs
+safe_url = DATABASE_URL.replace('://', '://***:***@') if '@' in DATABASE_URL else DATABASE_URL
+print(f"Ì≥° Conectando a: {safe_url.split('@')[0]}@***")
 
 def init_database():
+    conn = None
     try:
-        # Conectar a PostgreSQL en Render
-        conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+        # Conectar a PostgreSQL en Render con timeout
+        conn = psycopg2.connect(DATABASE_URL, sslmode='require', connect_timeout=10)
         conn.autocommit = True
         cursor = conn.cursor()
         
         print("‚úÖ Conectado a PostgreSQL en Render")
         
         # ==========================================
-        # CREAR TABLAS
+        # CREAR TABLAS (con IF NOT EXISTS)
         # ==========================================
+        
+        print("\nÌ≥ã Creando tablas...")
         
         # Tabla alumnos
         cursor.execute("""
@@ -41,7 +46,7 @@ def init_database():
                 fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        print("‚úÖ Tabla 'alumnos' creada")
+        print("  ‚úÖ Tabla 'alumnos'")
         
         # Tabla evaluacion
         cursor.execute("""
@@ -51,10 +56,11 @@ def init_database():
                 puntaje DECIMAL(5,2),
                 fecha DATE DEFAULT CURRENT_DATE,
                 examen_nombre VARCHAR(200),
-                feedback TEXT
+                feedback TEXT,
+                confianza_validacion DECIMAL(5,2)
             )
         """)
-        print("‚úÖ Tabla 'evaluacion' creada")
+        print("  ‚úÖ Tabla 'evaluacion'")
         
         # Tabla pregunta
         cursor.execute("""
@@ -66,7 +72,7 @@ def init_database():
                 puntos INTEGER DEFAULT 1
             )
         """)
-        print("‚úÖ Tabla 'pregunta' creada")
+        print("  ‚úÖ Tabla 'pregunta'")
         
         # Tabla respuesta
         cursor.execute("""
@@ -78,31 +84,30 @@ def init_database():
                 respuesta_alumno VARCHAR(50)
             )
         """)
-        print("‚úÖ Tabla 'respuesta' creada")
+        print("  ‚úÖ Tabla 'respuesta'")
         
         # ==========================================
-        # INSERTAR DATOS DE EJEMPLO (si no existen)
+        # INSERTAR DATOS DE EJEMPLO (solo si no existen)
         # ==========================================
         
-        # Verificar si ya hay datos
         cursor.execute("SELECT COUNT(*) FROM alumnos")
-        count = cursor.fetchone()[0]
+        count_alumnos = cursor.fetchone()[0]
         
-        if count == 0:
+        if count_alumnos == 0:
             print("\nÌ≥ù Insertando datos de ejemplo...")
             
             # Insertar alumnos
             alumnos_data = [
-                ('Carlos Ramirez', 'carlos@gmail.com', 10, 85.5, '3001234567'),
-                ('Laura Torres', 'laura@gmail.com', 11, 92.0, '3001234568'),
-                ('Andres Lopez', 'andres@gmail.com', 9, 78.5, '3001234569'),
-                ('Sofia Martinez', 'sofia@gmail.com', 10, 88.0, '3001234570'),
-                ('Daniela Rojas', 'daniela@gmail.com', 11, 95.5, '3001234571'),
-                ('Luis Fernandez', 'luis@gmail.com', 8, 72.0, '3001234572'),
-                ('Camila Vargas', 'camila@gmail.com', 10, 91.0, '3001234573'),
-                ('Miguel Castro', 'miguel@gmail.com', 9, 76.5, '3001234574'),
-                ('Valentina Ruiz', 'valentina@gmail.com', 11, 98.0, '3001234575'),
-                ('Sebastian Herrera', 'sebastian@gmail.com', 10, 84.0, '3001234576')
+                ('Valentina Rojas', 'valentina@email.com', 11, 98.0, '3001234567'),
+                ('Mateo Herrera', 'mateo@email.com', 10, 85.0, '3001234568'),
+                ('Sofia Ramirez', 'sofia@email.com', 11, 96.0, '3001234569'),
+                ('Isabella Torres', 'isabella@email.com', 11, 100.0, '3001234570'),
+                ('Samuel Gomez', 'samuel@email.com', 8, 78.0, '3001234571'),
+                ('Camila Ortiz', 'camila@email.com', 10, 92.0, '3001234572'),
+                ('Diego Fernandez', 'diego@email.com', 7, 68.0, '3001234573'),
+                ('Lucia Mendez', 'lucia@email.com', 9, 88.0, '3001234574'),
+                ('Javier Castro', 'javier@email.com', 6, 75.0, '3001234575'),
+                ('Daniela Paz', 'daniela@email.com', 5, 82.0, '3001234576')
             ]
             
             for alumno in alumnos_data:
@@ -135,22 +140,24 @@ def init_database():
             
             # Insertar evaluaciones
             evaluaciones_data = [
-                (1, 4.5, '2026-04-12', 'Examen Matem√°ticas'),
-                (2, 3.8, '2026-04-12', 'Examen Ciencias'),
-                (3, 5.0, '2026-04-13', 'Examen General'),
-                (4, 2.5, '2026-04-13', 'Examen Historia'),
-                (5, 4.2, '2026-04-14', 'Examen Matem√°ticas'),
+                (1, 95.0, '2026-04-12', 'Examen Matem√°ticas', 'Excelente trabajo'),
+                (2, 85.0, '2026-04-12', 'Examen Matem√°ticas', 'Buen desempe√±o'),
+                (3, 98.0, '2026-04-13', 'Examen Lengua', 'Sobresaliente'),
+                (4, 100.0, '2026-04-13', 'Examen Lengua', 'Perfecto'),
+                (5, 78.0, '2026-04-14', 'Examen Ciencias', 'Aprobado'),
             ]
             
             for eval_data in evaluaciones_data:
                 cursor.execute("""
-                    INSERT INTO evaluacion (id_alumno, puntaje, fecha, examen_nombre)
-                    VALUES (%s, %s, %s, %s)
+                    INSERT INTO evaluacion (id_alumno, puntaje, fecha, examen_nombre, feedback)
+                    VALUES (%s, %s, %s, %s, %s)
                 """, eval_data)
             print("  ‚úÖ 5 evaluaciones insertadas")
             
             conn.commit()
             print("\nÌæâ Datos de ejemplo insertados exitosamente")
+        else:
+            print(f"\nÌ≥ä Base de datos ya inicializada con {count_alumnos} alumnos")
         
         # ==========================================
         # MOSTRAR ESTAD√çSTICAS
@@ -169,17 +176,31 @@ def init_database():
         for row in cursor.fetchall():
             print(f"  {row[0]}: {row[1]} registros")
         
+        cursor.close()
         conn.close()
+        
         print("\n‚úÖ Inicializaci√≥n completada con √©xito")
+        return True
+        
+    except psycopg2.OperationalError as e:
+        print(f"‚ùå Error de conexi√≥n: {e}")
+        print("\nÌ≤° Soluciones:")
+        print("  1. Verifica que la base de datos en Render est√© activa")
+        print("  2. Confirma que DATABASE_URL es correcta")
+        print("  3. Asegura que las variables de entorno est√©n configuradas")
+        return False
         
     except Exception as e:
         print(f"‚ùå Error: {e}")
-        print("\nÌ≤° Soluciones:")
-        print("  1. Verifica que DATABASE_URL sea correcta")
-        print("  2. Asegura que la IP de Render est√© permitida")
-        print("  3. Revisa que la base de datos exista")
-        sys.exit(1)
+        return False
+        
+    finally:
+        if conn:
+            conn.close()
 
 if __name__ == "__main__":
     print("Ì∫Ä Inicializando base de datos en Render...")
-    init_database()
+    print("="*50)
+    success = init_database()
+    if not success:
+        sys.exit(1)

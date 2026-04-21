@@ -1,18 +1,12 @@
-const mysql = require('mysql2');
+const { Pool } = require('pg');
 
-const conexion = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: 'root', // ← pon tu contraseña real
-  database: 'evaluacion_ia'
+// Render inyecta DATABASE_URL automáticamente
+// NO pongas la contraseña aquí directamente
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' 
+    ? { rejectUnauthorized: false } 
+    : false
 });
 
-conexion.connect((err) => {
-  if (err) {
-    console.log('❌ Error de conexión:', err);
-  } else {
-    console.log('✅ Conectado a MySQL');
-  }
-});
-
-module.exports = conexion;
+module.exports = pool;

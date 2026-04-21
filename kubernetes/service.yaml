@@ -2,11 +2,63 @@ apiVersion: v1
 kind: Service
 metadata:
   name: eduscan-gateway-service
-  namespace: default
+  namespace: eduscan
 spec:
   selector:
     app: eduscan-gateway
   ports:
-    - port: 80
+    - port: 8000
       targetPort: 8000
   type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eduscan-ia-service
+  namespace: eduscan
+spec:
+  selector:
+    app: eduscan-ia
+  ports:
+    - port: 8001
+      targetPort: 8001
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eduscan-procesamiento-service
+  namespace: eduscan
+spec:
+  selector:
+    app: eduscan-procesamiento
+  ports:
+    - port: 8002
+      targetPort: 8002
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eduscan-database-service
+  namespace: eduscan
+spec:
+  selector:
+    app: eduscan-database
+  ports:
+    - port: 8003
+      targetPort: 8003
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: eduscan
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+  type: ClusterIP

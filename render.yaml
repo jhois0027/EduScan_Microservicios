@@ -1,75 +1,35 @@
 services:
-  # ========== BASE DE DATOS POSTGRESQL ==========
-  - type: postgresql
-    name: EduScan_db
-    region: oregon
-    plan: free
-    databaseName: eduscan
-    user: eduscan_user
-
-  # ========== API DE BASE DE DATOS ==========
-  - type: web
-    name: eduscan-database
-    runtime: python
-    repo: https://github.com/jhois0027/EduScan_Microservicios.git
-    branch: main
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn services.database:app --host 0.0.0.0 --port 8003
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: EduScan_db
-          property: connectionString
-
-  # ========== API GATEWAY ==========
+  # Servicio de Gateway API con IA Validada
   - type: web
     name: eduscan-gateway
     runtime: python
-    repo: https://github.com/jhois0027/EduScan_Microservicios.git
-    branch: main
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn api.gateway:app --host 0.0.0.0 --port 8000
+    repo: https://github.com/tu-usuario/EduScan  # Cambia por tu repo
+    plan: free
+    region: oregon
+    buildCommand: |
+      apt-get update && apt-get install -y tesseract-ocr
+      pip install --upgrade pip
+      pip install opencv-python-headless==4.8.1.78
+      pip install numpy==1.26.4
+      pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.api.gateway:app --host 0.0.0.0 --port $PORT
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
       - key: DATABASE_URL
         fromDatabase:
-          name: EduScan_db
+          name: eduscan-db
           property: connectionString
-
-  # ========== SERVICIO DE IA (GEMINI) ==========
-  - type: web
-    name: eduscan-ia
-    runtime: python
-    repo: https://github.com/jhois0027/EduScan_Microservicios.git
-    branch: main
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn services.ia_modelo:app --host 0.0.0.0 --port 8002
-    envVars:
       - key: GEMINI_API_KEY
-        value: TU_API_KEY_AQUI  # í´´ CAMBIA ESTO POR TU API KEY REAL
+        sync: false
+      - key: TESSERACT_CMD
+        value: /usr/bin/tesseract
 
-  # ========== PROCESAMIENTO ==========
-  - type: web
-    name: eduscan-procesamiento
-    runtime: python
-    repo: https://github.com/jhois0027/EduScan_Microservicios.git
-    branch: main
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn services.procesamiento:app --host 0.0.0.0 --port 8001
-
-  # ========== FRONTEND PRINCIPAL ==========
-  - type: web
-    name: eduscan-frontend
-    runtime: static
-    repo: https://github.com/jhois0027/EduScan_Microservicios.git
-    branch: main
-    buildCommand: echo "Static site ready"
-    publishDirectory: ./frontend
-
-  # ========== DASHBOARD (Static) ==========
-  - type: web
-    name: eduscan-dashboard
-    runtime: static
-    repo: https://github.com/jhois0027/EduScan_Microservicios.git
-    branch: main
-    buildCommand: echo "Static site ready"
-    publishDirectory: ./frontend
+  # Base de datos PostgreSQL
+  - type: postgresql
+    name: eduscan-db
+    plan: free
+    region: oregon
+    databaseName: eduscan
+    user: eduscan_user
+    ipAllowList: []

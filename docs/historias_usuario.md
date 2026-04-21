@@ -33,9 +33,6 @@
 
 11. Como docente, quiero ver el historial de puntajes de cada alumno para hacer seguimiento de su progreso.
 
-12. Como docente, quiero comparar el rendimiento de un alumno por módulo para identificar fortalezas y debilidades.
-
-13. Como docente, quiero exportar los datos de alumnos a CSV para tener un respaldo o compartirlos.
 
 14. Como docente, quiero acceder desde mi celular o computador para usar la plataforma en cualquier momento.
 

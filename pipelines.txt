@@ -1,0 +1,6 @@
+total 6
+drwxr-xr-x 1 pc 197121    0 Apr 16 14:07 ./
+drwxr-xr-x 1 pc 197121    0 Apr 14 16:38 ../
+-rw-r--r-- 1 pc 197121 1240 Apr 18 15:11 ci.yml
+-rw-r--r-- 1 pc 197121  196 Apr 14 17:23 deploy.yml
+-rw-r--r-- 1 pc 197121  412 Apr 16 18:36 test.yml
