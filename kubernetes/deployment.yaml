@@ -4,7 +4,7 @@ metadata:
   name: eduscan-gateway
   namespace: eduscan
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: eduscan-gateway
@@ -25,7 +25,7 @@ metadata:
   name: eduscan-ia
   namespace: eduscan
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: eduscan-ia
@@ -46,7 +46,7 @@ metadata:
   name: eduscan-procesamiento
   namespace: eduscan
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: eduscan-procesamiento

@@ -6,33 +6,26 @@ import os
 import sys
 from datetime import datetime
 
-# Obtener URL de base de datos
-DATABASE_URL = os.getenv('DATABASE_URL')
+# URL DIRECTA (sin .env)
+DATABASE_URL = "postgresql://eduscan_user:BEAItZDgqRvBauTjKi52BYgGO7rZqAct@dpg-d7g54nhj2pic7386h040.oregon-postgres.render.com/eduscan_db_72hg"
 
-if not DATABASE_URL:
-    print("‚ùå Error: DATABASE_URL no est√° configurada en .env")
-    print("Ì≥ù Agrega: DATABASE_URL=postgresql://...")
-    sys.exit(1)
-
-# Ocultar credenciales en logs
-safe_url = DATABASE_URL.replace('://', '://***:***@') if '@' in DATABASE_URL else DATABASE_URL
-print(f"Ì≥° Conectando a: {safe_url.split('@')[0]}@***")
+print(f"üîå Conectando a: {DATABASE_URL.split('@')[0].replace('://', '://***:***@')}@***")
 
 def init_database():
     conn = None
     try:
-        # Conectar a PostgreSQL en Render con timeout
-        conn = psycopg2.connect(DATABASE_URL, sslmode='require', connect_timeout=10)
+        # Conectar SIN SSL
+        conn = psycopg2.connect(DATABASE_URL, sslmode='require', connect_timeout=30)
         conn.autocommit = True
         cursor = conn.cursor()
         
         print("‚úÖ Conectado a PostgreSQL en Render")
         
         # ==========================================
-        # CREAR TABLAS (con IF NOT EXISTS)
+        # CREAR TABLAS
         # ==========================================
         
-        print("\nÌ≥ã Creando tablas...")
+        print("\nüì¶ Creando tablas...")
         
         # Tabla alumnos
         cursor.execute("""
@@ -86,84 +79,70 @@ def init_database():
         """)
         print("  ‚úÖ Tabla 'respuesta'")
         
+        # Tabla docentes
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS docentes (
+                id_docente SERIAL PRIMARY KEY,
+                nombre VARCHAR(100) NOT NULL,
+                email VARCHAR(100) UNIQUE NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                rol VARCHAR(50) DEFAULT 'docente',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        print("  ‚úÖ Tabla 'docentes'")
+        
+        # Tabla docente_grados
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS docente_grados (
+                id SERIAL PRIMARY KEY,
+                docente_id INTEGER REFERENCES docentes(id_docente) ON DELETE CASCADE,
+                grado INTEGER NOT NULL,
+                UNIQUE(docente_id, grado)
+            )
+        """)
+        print("  ‚úÖ Tabla 'docente_grados'")
+        
         # ==========================================
-        # INSERTAR DATOS DE EJEMPLO (solo si no existen)
+        # INSERTAR DATOS DE EJEMPLO
         # ==========================================
         
-        cursor.execute("SELECT COUNT(*) FROM alumnos")
-        count_alumnos = cursor.fetchone()[0]
+        # Docentes
+        cursor.execute("SELECT COUNT(*) FROM docentes")
+        if cursor.fetchone()[0] == 0:
+            print("\nüìù Insertando docentes...")
+            hash_pass = '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.VTtXEyMqCqB7QK'
+            
+            cursor.execute("""
+                INSERT INTO docentes (nombre, email, password_hash, rol) VALUES
+                ('Prof. Ana Lopez', 'ana@eduscan.com', %s, 'docente'),
+                ('Prof. Carlos Ruiz', 'carlos@eduscan.com', %s, 'docente'),
+                ('Administrador', 'admin@eduscan.com', %s, 'admin')
+                ON CONFLICT (email) DO NOTHING
+            """, (hash_pass, hash_pass, hash_pass))
+            print("  ‚úÖ Docentes insertados")
+            
+            # Asignar grados
+            cursor.execute("SELECT id_docente FROM docentes WHERE email = 'ana@eduscan.com'")
+            ana = cursor.fetchone()
+            cursor.execute("SELECT id_docente FROM docentes WHERE email = 'carlos@eduscan.com'")
+            carlos = cursor.fetchone()
+            
+            if ana and carlos:
+                cursor.execute("""
+                    INSERT INTO docente_grados (docente_id, grado) VALUES
+                    (%s, 10), (%s, 11), (%s, 8), (%s, 9)
+                    ON CONFLICT (docente_id, grado) DO NOTHING
+                """, (ana[0], ana[0], carlos[0], carlos[0]))
+                print("  ‚úÖ Grados asignados")
         
-        if count_alumnos == 0:
-            print("\nÌ≥ù Insertando datos de ejemplo...")
-            
-            # Insertar alumnos
-            alumnos_data = [
-                ('Valentina Rojas', 'valentina@email.com', 11, 98.0, '3001234567'),
-                ('Mateo Herrera', 'mateo@email.com', 10, 85.0, '3001234568'),
-                ('Sofia Ramirez', 'sofia@email.com', 11, 96.0, '3001234569'),
-                ('Isabella Torres', 'isabella@email.com', 11, 100.0, '3001234570'),
-                ('Samuel Gomez', 'samuel@email.com', 8, 78.0, '3001234571'),
-                ('Camila Ortiz', 'camila@email.com', 10, 92.0, '3001234572'),
-                ('Diego Fernandez', 'diego@email.com', 7, 68.0, '3001234573'),
-                ('Lucia Mendez', 'lucia@email.com', 9, 88.0, '3001234574'),
-                ('Javier Castro', 'javier@email.com', 6, 75.0, '3001234575'),
-                ('Daniela Paz', 'daniela@email.com', 5, 82.0, '3001234576')
-            ]
-            
-            for alumno in alumnos_data:
-                cursor.execute("""
-                    INSERT INTO alumnos (nombre, correo, grado, promedio, telefono)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, alumno)
-            print("  ‚úÖ 10 alumnos insertados")
-            
-            # Insertar preguntas
-            preguntas_data = [
-                ('2 + 2 = ?', '4', 'Matem√°ticas', 1),
-                ('5 x 3 = ?', '15', 'Matem√°ticas', 1),
-                ('10 - 6 = ?', '4', 'Matem√°ticas', 1),
-                ('Capital de Colombia', 'Bogota', 'Geograf√≠a', 1),
-                ('Color del cielo en un dia despejado', 'Azul', 'Ciencias', 1),
-                ('3 + 7 = ?', '10', 'Matem√°ticas', 1),
-                ('9 x 2 = ?', '18', 'Matem√°ticas', 1),
-                ('15 / 3 = ?', '5', 'Matem√°ticas', 1),
-                ('Raiz cuadrada de 16', '4', 'Matem√°ticas', 1),
-                ('Cuantos dias tiene una semana', '7', 'General', 1)
-            ]
-            
-            for pregunta in preguntas_data:
-                cursor.execute("""
-                    INSERT INTO pregunta (descripcion, respuesta_correcta, materia, puntos)
-                    VALUES (%s, %s, %s, %s)
-                """, pregunta)
-            print("  ‚úÖ 10 preguntas insertadas")
-            
-            # Insertar evaluaciones
-            evaluaciones_data = [
-                (1, 95.0, '2026-04-12', 'Examen Matem√°ticas', 'Excelente trabajo'),
-                (2, 85.0, '2026-04-12', 'Examen Matem√°ticas', 'Buen desempe√±o'),
-                (3, 98.0, '2026-04-13', 'Examen Lengua', 'Sobresaliente'),
-                (4, 100.0, '2026-04-13', 'Examen Lengua', 'Perfecto'),
-                (5, 78.0, '2026-04-14', 'Examen Ciencias', 'Aprobado'),
-            ]
-            
-            for eval_data in evaluaciones_data:
-                cursor.execute("""
-                    INSERT INTO evaluacion (id_alumno, puntaje, fecha, examen_nombre, feedback)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, eval_data)
-            print("  ‚úÖ 5 evaluaciones insertadas")
-            
-            conn.commit()
-            print("\nÌæâ Datos de ejemplo insertados exitosamente")
-        else:
-            print(f"\nÌ≥ä Base de datos ya inicializada con {count_alumnos} alumnos")
+        conn.commit()
         
         # ==========================================
         # MOSTRAR ESTAD√çSTICAS
         # ==========================================
         print("\n" + "="*50)
-        print("Ì≥ä ESTAD√çSTICAS DE LA BASE DE DATOS")
+        print("üìä ESTAD√çSTICAS DE LA BASE DE DATOS")
         print("="*50)
         
         cursor.execute("""
@@ -171,20 +150,29 @@ def init_database():
             UNION ALL SELECT 'Evaluaciones', COUNT(*) FROM evaluacion
             UNION ALL SELECT 'Preguntas', COUNT(*) FROM pregunta
             UNION ALL SELECT 'Respuestas', COUNT(*) FROM respuesta
+            UNION ALL SELECT 'Docentes', COUNT(*) FROM docentes
+            UNION ALL SELECT 'Docente_Grados', COUNT(*) FROM docente_grados
         """)
         
         for row in cursor.fetchall():
             print(f"  {row[0]}: {row[1]} registros")
         
+        cursor.execute("SELECT nombre, email, rol FROM docentes")
+        print("\nüë®‚Äçüè´ DOCENTES:")
+        for row in cursor.fetchall():
+            print(f"   {row[0]} | {row[1]} | {row[2]}")
+        
         cursor.close()
         conn.close()
         
-        print("\n‚úÖ Inicializaci√≥n completada con √©xito")
+        print("\n‚úÖ Inicializaci√≥n completada")
+        print("\nüîë CREDENCIALES: ana@eduscan.com / password123")
+        
         return True
         
     except psycopg2.OperationalError as e:
         print(f"‚ùå Error de conexi√≥n: {e}")
-        print("\nÌ≤° Soluciones:")
+        print("\nÔøΩÔøΩÔøΩ Soluciones:")
         print("  1. Verifica que la base de datos en Render est√© activa")
         print("  2. Confirma que DATABASE_URL es correcta")
         print("  3. Asegura que las variables de entorno est√©n configuradas")
@@ -199,7 +187,7 @@ def init_database():
             conn.close()
 
 if __name__ == "__main__":
-    print("Ì∫Ä Inicializando base de datos en Render...")
+    print("üöÄ Inicializando base de datos en Render...")
     print("="*50)
     success = init_database()
     if not success:
