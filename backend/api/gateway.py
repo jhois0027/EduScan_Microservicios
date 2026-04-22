@@ -306,6 +306,134 @@ async function enviar() {
     """
 
 # ============================================
+# INICIALIZAR BASE DE DATOS (DOCENTES)
+# ============================================
+@app.get("/api/inicializar-bd")
+async def inicializar_base_datos():
+    """
+    Endpoint para inicializar las tablas de docentes en la base de datos.
+    Llama a esta URL una vez para crear las tablas necesarias.
+    
+    Credenciales que se crearán:
+    - ana@eduscan.com / password123 (ve grados 10° y 11°)
+    - carlos@eduscan.com / password123 (ve grados 8° y 9°)
+    - admin@eduscan.com / password123 (ve todo)
+    """
+    import psycopg2
+    
+    try:
+        DATABASE_URL = os.getenv('DATABASE_URL')
+        
+        if not DATABASE_URL:
+            return {
+                "success": False,
+                "error": "DATABASE_URL no está configurada en las variables de entorno",
+                "solucion": "Agrega DATABASE_URL en Environment Variables en Render"
+            }
+        
+        print(f"🔌 Conectando a base de datos...")
+        conn = psycopg2.connect(DATABASE_URL, connect_timeout=10)
+        conn.autocommit = True
+        cur = conn.cursor()
+        
+        # Crear tabla docentes
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS docentes (
+                id_docente SERIAL PRIMARY KEY,
+                nombre VARCHAR(100) NOT NULL,
+                email VARCHAR(100) UNIQUE NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                rol VARCHAR(50) DEFAULT 'docente',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        # Crear tabla docente_grados
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS docente_grados (
+                id SERIAL PRIMARY KEY,
+                docente_id INTEGER REFERENCES docentes(id_docente) ON DELETE CASCADE,
+                grado INTEGER NOT NULL,
+                UNIQUE(docente_id, grado)
+            )
+        """)
+        
+        # Verificar si ya hay docentes
+        cur.execute("SELECT COUNT(*) FROM docentes")
+        count = cur.fetchone()[0]
+        
+        resultados = {
+            "tablas_creadas": True,
+            "docentes_existentes": count,
+            "docentes_insertados": 0,
+            "grados_asignados": 0
+        }
+        
+        if count == 0:
+            # Hash de contraseña 'password123'
+            hash_pass = '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.VTtXEyMqCqB7QK'
+            
+            # Insertar docentes
+            cur.execute("""
+                INSERT INTO docentes (nombre, email, password_hash, rol) VALUES
+                ('Prof. Ana Lopez', 'ana@eduscan.com', %s, 'docente'),
+                ('Prof. Carlos Ruiz', 'carlos@eduscan.com', %s, 'docente'),
+                ('Administrador', 'admin@eduscan.com', %s, 'admin')
+                ON CONFLICT (email) DO NOTHING
+                RETURNING id_docente, email
+            """, (hash_pass, hash_pass, hash_pass))
+            
+            resultados["docentes_insertados"] = 3
+            
+            # Obtener IDs
+            cur.execute("SELECT id_docente FROM docentes WHERE email = 'ana@eduscan.com'")
+            ana = cur.fetchone()
+            cur.execute("SELECT id_docente FROM docentes WHERE email = 'carlos@eduscan.com'")
+            carlos = cur.fetchone()
+            
+            if ana and carlos:
+                cur.execute("""
+                    INSERT INTO docente_grados (docente_id, grado) VALUES
+                    (%s, 10), (%s, 11), (%s, 8), (%s, 9)
+                    ON CONFLICT (docente_id, grado) DO NOTHING
+                """, (ana[0], ana[0], carlos[0], carlos[0]))
+                resultados["grados_asignados"] = 4
+        
+        # Obtener lista de docentes para mostrar
+        cur.execute("SELECT id_docente, nombre, email, rol FROM docentes")
+        docentes = cur.fetchall()
+        
+        cur.close()
+        conn.close()
+        
+        return {
+            "success": True,
+            "message": "Base de datos inicializada correctamente" if count == 0 else "Las tablas ya existían",
+            "resultados": resultados,
+            "docentes": [
+                {"id": d[0], "nombre": d[1], "email": d[2], "rol": d[3]} 
+                for d in docentes
+            ],
+            "credenciales": {
+                "ana@eduscan.com": "password123 (grados 10° y 11°)",
+                "carlos@eduscan.com": "password123 (grados 8° y 9°)",
+                "admin@eduscan.com": "password123 (todos los grados)"
+            }
+        }
+        
+    except psycopg2.OperationalError as e:
+        return {
+            "success": False,
+            "error": f"Error de conexión a la base de datos: {str(e)}",
+            "solucion": "Verifica que DATABASE_URL esté correctamente configurada en las variables de entorno de Render"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Error inesperado: {str(e)}"
+        }
+    
+# ============================================
 # MAIN
 # ============================================
 if __name__ == "__main__":
