@@ -624,7 +624,42 @@ async def inicializar_base_datos():
             "success": False,
             "error": f"Error inesperado: {str(e)}"
         }
+@app.post("/nueva_evaluacion")
+async def nueva_evaluacion(request: Request):
+    """Guardar nueva evaluación en la base de datos"""
+    import psycopg2
     
+    try:
+        data = await request.json()
+        DATABASE_URL = os.getenv('DATABASE_URL')
+        
+        if not DATABASE_URL:
+            return {"success": False, "error": "DATABASE_URL no configurada"}
+        
+        conn = psycopg2.connect(DATABASE_URL)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            INSERT INTO evaluacion (id_alumno, puntaje, fecha, examen_nombre, feedback, confianza_validacion)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+            data.get('id_alumno'),
+            data.get('puntaje'),
+            data.get('fecha'),
+            data.get('examen_nombre'),
+            data.get('feedback'),
+            data.get('confianza_validacion', 0.85)
+        ))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return {"success": True}
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+       
 # ============================================
 # MAIN
 # ============================================
