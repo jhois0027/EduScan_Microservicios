@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
+import jwt
+import bcrypt
 
 app = FastAPI(title="EduScan Gateway", version="2.0")
 
@@ -16,6 +19,39 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Configuración JWT
+SECRET_KEY = os.getenv("SECRET_KEY", "tu-clave-secreta-cambiar-en-produccion")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 horas
+
+security = HTTPBearer()
+
+# ============================================
+# FUNCIONES DE AUTENTICACIÓN
+# ============================================
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+
+def get_current_docente(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        docente_id: int = payload.get("sub")
+        if docente_id is None:
+            raise HTTPException(status_code=401, detail="Token inválido")
+        return docente_id
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expirado")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Token inválido")
 
 # ============================================
 # ENDPOINT RAÍZ
@@ -30,10 +66,14 @@ async def root():
         "endpoints": {
             "/": "Información de la API",
             "/health": "Estado del servicio",
-            "/api/alumnos": "Lista de alumnos",
+            "/api/login": "Login para docentes (POST)",
+            "/api/mis-alumnos": "Lista de alumnos del docente (GET - requiere token)",
+            "/api/mis-calificaciones": "Lista de calificaciones del docente (GET - requiere token)",
+            "/api/alumnos": "Lista de alumnos (público - deprecated)",
             "/api/examenes": "Lista de exámenes",
-            "/api/calificaciones": "Lista de calificaciones",
+            "/api/calificaciones": "Lista de calificaciones (público - deprecated)",
             "/api/corregir-examen": "Corregir examen (POST)",
+            "/api/inicializar-bd": "Inicializar base de datos (GET)",
             "/camara": "Interfaz de cámara"
         }
     }
@@ -46,7 +86,157 @@ async def health():
     return {"status": "ok", "service": "eduscan-gateway", "timestamp": datetime.now().isoformat()}
 
 # ============================================
-# ENDPOINTS DE DATOS
+# AUTENTICACIÓN Y SEGREGACIÓN DE DOCENTES
+# ============================================
+
+@app.post("/api/login")
+async def login(email: str, password: str):
+    """Login para docentes - Devuelve token JWT"""
+    import psycopg2
+    
+    try:
+        DATABASE_URL = os.getenv('DATABASE_URL')
+        if not DATABASE_URL:
+            return {"success": False, "error": "DATABASE_URL no configurada"}
+        
+        conn = psycopg2.connect(DATABASE_URL)
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT id_docente, nombre, email, password_hash, rol FROM docentes WHERE email = %s", (email,))
+        docente = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        if not docente:
+            return {"success": False, "error": "Credenciales inválidas"}
+        
+        if not verify_password(password, docente[3]):
+            return {"success": False, "error": "Credenciales inválidas"}
+        
+        token = create_access_token(data={"sub": docente[0], "rol": docente[4]})
+        
+        return {
+            "success": True,
+            "token": token,
+            "docente": {
+                "id": docente[0],
+                "nombre": docente[1],
+                "email": docente[2],
+                "rol": docente[4]
+            }
+        }
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.get("/api/mis-alumnos")
+async def get_mis_alumnos(docente_id: int = Depends(get_current_docente)):
+    """Obtiene SOLO los alumnos del docente autenticado"""
+    import psycopg2
+    
+    try:
+        DATABASE_URL = os.getenv('DATABASE_URL')
+        conn = psycopg2.connect(DATABASE_URL)
+        cursor = conn.cursor()
+        
+        # Obtener grados que enseña este docente
+        cursor.execute("SELECT grado FROM docente_grados WHERE docente_id = %s", (docente_id,))
+        grados = [row[0] for row in cursor.fetchall()]
+        
+        if not grados:
+            cursor.close()
+            conn.close()
+            return {"success": True, "alumnos": [], "mis_grados": []}
+        
+        # Obtener alumnos SOLO de esos grados
+        placeholders = ','.join(['%s'] * len(grados))
+        cursor.execute(f"""
+            SELECT id_alumno, nombre, correo, grado, promedio 
+            FROM alumnos 
+            WHERE grado IN ({placeholders})
+            ORDER BY grado, nombre
+        """, grados)
+        
+        alumnos = []
+        for row in cursor.fetchall():
+            alumnos.append({
+                "id": row[0],
+                "nombre": row[1],
+                "correo": row[2],
+                "grado": row[3],
+                "promedio": float(row[4]) if row[4] else 0
+            })
+        
+        cursor.close()
+        conn.close()
+        
+        return {
+            "success": True,
+            "alumnos": alumnos,
+            "mis_grados": grados,
+            "total": len(alumnos)
+        }
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.get("/api/mis-calificaciones")
+async def get_mis_calificaciones(docente_id: int = Depends(get_current_docente)):
+    """Obtiene SOLO las calificaciones de los alumnos del docente"""
+    import psycopg2
+    
+    try:
+        DATABASE_URL = os.getenv('DATABASE_URL')
+        conn = psycopg2.connect(DATABASE_URL)
+        cursor = conn.cursor()
+        
+        # Obtener grados del docente
+        cursor.execute("SELECT grado FROM docente_grados WHERE docente_id = %s", (docente_id,))
+        grados = [row[0] for row in cursor.fetchall()]
+        
+        if not grados:
+            cursor.close()
+            conn.close()
+            return {"success": True, "calificaciones": []}
+        
+        placeholders = ','.join(['%s'] * len(grados))
+        cursor.execute(f"""
+            SELECT a.nombre as alumno_nombre, a.grado, e.puntaje, e.fecha, e.examen_nombre
+            FROM evaluacion e
+            JOIN alumnos a ON e.id_alumno = a.id_alumno
+            WHERE a.grado IN ({placeholders})
+            ORDER BY e.fecha DESC, a.grado, a.nombre
+            LIMIT 50
+        """, grados)
+        
+        calificaciones = []
+        for row in cursor.fetchall():
+            calificaciones.append({
+                "alumno": row[0],
+                "grado": row[1],
+                "nota": float(row[2]) if row[2] else 0,
+                "fecha": str(row[3]),
+                "examen": row[4] or "Examen"
+            })
+        
+        cursor.close()
+        conn.close()
+        
+        return {"success": True, "calificaciones": calificaciones, "total": len(calificaciones)}
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.get("/api/verificar-token")
+async def verificar_token(docente_id: int = Depends(get_current_docente)):
+    """Verifica si el token es válido"""
+    return {"success": True, "docente_id": docente_id}
+
+# ============================================
+# ENDPOINTS DE DATOS (PÚBLICOS - DEPRECATED)
 # ============================================
 @app.get("/api/alumnos")
 async def get_alumnos():
@@ -333,7 +523,7 @@ async def inicializar_base_datos():
                 "solucion": "Agrega DATABASE_URL en Environment Variables en Render"
             }
         
-        print(f"🔌 Conectando a base de datos...")
+        print(f"Conectando a base de datos...")
         conn = psycopg2.connect(DATABASE_URL, connect_timeout=10)
         conn.autocommit = True
         cur = conn.cursor()
