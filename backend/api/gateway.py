@@ -88,49 +88,51 @@ async def get_calificaciones():
 # ============================================
 # CORRECCIÓN CON IA
 # ============================================
+
+from services.ia_validator import procesar_imagen_examen
+
 @app.post("/api/corregir-examen")
 async def corregir_examen(request: Request):
-    """Corregir examen con IA"""
     try:
         form = await request.form()
         file = form.get("imagen")
-        
+
         if not file:
-            return JSONResponse({
-                "success": False,
-                "error": "No se proporcionó ninguna imagen"
-            }, status_code=400)
-        
-        # Leer la imagen
+            return JSONResponse(
+                {
+                    "success": False,
+                    "error": "No se proporcionó ninguna imagen"
+                },
+                status_code=400
+            )
+
         imagen_bytes = await file.read()
-        
-        # Validar que la imagen no esté vacía
+
         if len(imagen_bytes) < 1000:
-            return JSONResponse({
-                "success": False,
-                "error": "La imagen está vacía o es demasiado pequeña",
-                "detalles": {
-                    "razones": ["La imagen no tiene contenido suficiente"],
-                    "sugerencia": "Asegúrate de que la imagen muestre claramente el examen"
-                }
-            })
-        
-        # Calcular nota simulada (entre 65 y 100)
-        nota = random.randint(65, 100)
-        
-        return JSONResponse({
-            "success": True,
-            "nota": nota,
-            "feedback": "Examen corregido exitosamente" if nota >= 70 else "Necesitas mejorar en algunos temas",
-            "confianza_validacion": 0.85,
-            "detalles_validacion": ["Imagen recibida correctamente", "Formato válido", "Procesamiento completado"]
-        })
-        
+            return JSONResponse(
+                {
+                    "success": False,
+                    "error": "Imagen demasiado pequeña",
+                    "detalles": {
+                        "sugerencia": "Toma una foto donde se vea completo el examen"
+                    }
+                },
+                status_code=400
+            )
+
+        # Aquí llama tu IA validator real
+        resultado = procesar_imagen_examen(imagen_bytes)
+
+        return JSONResponse(resultado)
+
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "error": f"Error al procesar: {str(e)}"
-        }, status_code=500)
+        return JSONResponse(
+            {
+                "success": False,
+                "error": f"Error al procesar: {str(e)}"
+            },
+            status_code=500
+        )
 
 # ============================================
 # INTERFAZ DE CÁMARA
