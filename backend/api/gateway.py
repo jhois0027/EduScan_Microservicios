@@ -700,7 +700,32 @@ async def cambiar_password(email: str, nueva_password: str):
     except Exception as e:
         return {"success": False, "error": str(e)}
        
-
+# ============================================
+# AGREGAR COLUMNAS A LA TABLA ALUMNOS
+# ============================================
+@app.get("/api/agregar-columnas")
+async def agregar_columnas():
+    import psycopg2
+    
+    try:
+        DATABASE_URL = os.getenv('DATABASE_URL')
+        conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+        conn.autocommit = True
+        cur = conn.cursor()
+        
+        # Agregar columnas faltantes
+        cur.execute("ALTER TABLE alumnos ADD COLUMN IF NOT EXISTS correo VARCHAR(100)")
+        cur.execute("ALTER TABLE alumnos ADD COLUMN IF NOT EXISTS grado INTEGER")
+        cur.execute("ALTER TABLE alumnos ADD COLUMN IF NOT EXISTS promedio DECIMAL(5,2) DEFAULT 0")
+        
+        cur.close()
+        conn.close()
+        
+        return {"success": True, "message": "Columnas agregadas correctamente: correo, grado, promedio"}
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    
   # ============================================
 # INSERTAR ALUMNOS DE PRUEBA POR PROFESOR
 # ============================================
