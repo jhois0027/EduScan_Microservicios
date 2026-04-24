@@ -278,6 +278,38 @@
             box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.3);
         }
 
+        /* Login Container */
+        .login-container {
+            max-width: 450px;
+            margin: 50px auto;
+            background: white;
+            border-radius: 32px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+        .login-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .user-info-bar {
+            background: white;
+            border-radius: 80px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .logout-btn {
+            background: #ef4444;
+            width: auto;
+            padding: 8px 20px;
+        }
+
         @media (max-width: 640px) {
             body {
                 padding: 16px 12px;
@@ -296,46 +328,69 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1><i class="fas fa-graduation-cap"></i> EduScan · Corrector IA</h1>
-            <p><i class="fas fa-brain"></i> Inteligencia artificial para evaluación automática</p>
-        </div>
+    <!-- Pantalla de Login -->
+    <div id="loginSection" class="login-container">
+        <h2><i class="fas fa-graduation-cap"></i> EduScan</h2>
+        <p style="text-align: center; color: #64748b; margin-bottom: 30px;">Acceso Docente - Corrector IA</p>
+        <input type="email" id="email" placeholder="Correo electrónico" value="ana@eduscan.com">
+        <input type="password" id="password" placeholder="Contraseña" value="123">
+        <button onclick="login()" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Ingresar</button>
+        <div id="loginError" class="error-message" style="color: red; text-align: center; margin-top: 15px;"></div>
+        <p style="text-align: center; margin-top: 20px; font-size: 12px; color: #94a3b8;">
+            <i class="fas fa-info-circle"></i> ana@eduscan.com / 123 (grados 10°-11°)<br>
+            carlos@eduscan.com / 123 (grados 8°-9°)
+        </p>
+    </div>
 
-        <div class="card">
-            <label><i class="fas fa-user-astronaut"></i> Estudiante</label>
-            <select id="selectAlumno">
-                <option value="">-- Seleccionar estudiante --</option>
-            </select>
-            
-            <label><i class="fas fa-book-open"></i> Examen</label>
-            <input type="text" id="examenNombre" placeholder="Ej: Álgebra - Unidad 2">
-            <input type="number" id="examenGrado" placeholder="Grado (1 a 11)">
-        </div>
+    <!-- Contenido del Corrector (oculto hasta login) -->
+    <div id="correctorSection" style="display: none;">
+        <div class="container">
+            <div class="header">
+                <h1><i class="fas fa-graduation-cap"></i> EduScan · Corrector IA</h1>
+                <p><i class="fas fa-brain"></i> Inteligencia artificial para evaluación automática</p>
+            </div>
 
-        <div class="card">
-            <div class="camera-preview" id="cameraPreview">
-                <div class="camera-placeholder" id="cameraPlaceholder">
-                    <i class="fas fa-camera-retro"></i>
-                    <p>Captura el examen o sube una imagen</p>
-                    <span style="font-size:12px; opacity:0.7;">Listo para corregir con IA</span>
+            <!-- Barra de usuario -->
+            <div class="user-info-bar">
+                <div><i class="fas fa-user-circle" style="font-size: 24px; color: #667eea;"></i> <strong id="docenteNombre"></strong></div>
+                <button onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Salir</button>
+            </div>
+
+            <div class="card">
+                <label><i class="fas fa-user-astronaut"></i> Estudiante</label>
+                <select id="selectAlumno">
+                    <option value="">-- Seleccionar estudiante --</option>
+                </select>
+                
+                <label><i class="fas fa-book-open"></i> Examen</label>
+                <input type="text" id="examenNombre" placeholder="Ej: Álgebra - Unidad 2">
+                <input type="number" id="examenGrado" placeholder="Grado (1 a 11)">
+            </div>
+
+            <div class="card">
+                <div class="camera-preview" id="cameraPreview">
+                    <div class="camera-placeholder" id="cameraPlaceholder">
+                        <i class="fas fa-camera-retro"></i>
+                        <p>Captura el examen o sube una imagen</p>
+                        <span style="font-size:12px; opacity:0.7;">Listo para corregir con IA</span>
+                    </div>
+                    <video id="cameraVideo" autoplay playsinline style="display:none; width:100%;"></video>
+                    <canvas id="cameraCanvas" style="display:none;"></canvas>
+                    <img id="previewImg" class="preview-img" style="display:none;">
                 </div>
-                <video id="cameraVideo" autoplay playsinline style="display:none; width:100%;"></video>
-                <canvas id="cameraCanvas" style="display:none;"></canvas>
-                <img id="previewImg" class="preview-img" style="display:none;">
+
+                <div class="flex-row">
+                    <button id="btnAbrirCamara" class="btn-primary"><i class="fas fa-camera"></i> Abrir Cámara</button>
+                    <button id="btnCerrarCamara" class="btn-secondary" style="display:none;"><i class="fas fa-stop-circle"></i> Cerrar</button>
+                    <button id="btnSubirImagen" class="btn-secondary"><i class="fas fa-cloud-upload-alt"></i> Subir Imagen</button>
+                </div>
+                <input type="file" id="fileInput" accept="image/*" style="display:none;">
+
+                <button id="btnCorregir" class="btn-success" disabled><i class="fas fa-robot"></i> Corregir con IA</button>
             </div>
 
-            <div class="flex-row">
-                <button id="btnAbrirCamara" class="btn-primary"><i class="fas fa-camera"></i> Abrir Cámara</button>
-                <button id="btnCerrarCamara" class="btn-secondary" style="display:none;"><i class="fas fa-stop-circle"></i> Cerrar</button>
-                <button id="btnSubirImagen" class="btn-secondary"><i class="fas fa-cloud-upload-alt"></i> Subir Imagen</button>
-            </div>
-            <input type="file" id="fileInput" accept="image/*" style="display:none;">
-
-            <button id="btnCorregir" class="btn-success" disabled><i class="fas fa-robot"></i> Corregir con IA</button>
+            <div id="resultadoArea" class="resultado"></div>
         </div>
-
-        <div id="resultadoArea" class="resultado"></div>
     </div>
 
     <div id="toast" class="toast"></div>
@@ -346,38 +401,89 @@
         // ============================================
         const API_URL = 'https://eduscan-gateway.onrender.com';
         
+        let token = null;
+        let docenteActual = null;
         let alumnos = [];
         let currentImageData = null;
         let cameraStream = null;
         let ultimaCorreccion = null;
 
         // ============================================
-        // CARGAR ALUMNOS DESDE LA BASE DE DATOS
+        // FUNCIONES DE AUTENTICACIÓN
         // ============================================
-        async function cargarAlumnos() {
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.textContent = '';
+            
             try {
-                // Intentar cargar desde el gateway (base de datos real)
-                const response = await fetch(`${API_URL}/alumnos`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.alumnos && data.alumnos.length > 0) {
-                        alumnos = data.alumnos;
-                        actualizarSelectores();
-                        mostrarToast(`✅ ${alumnos.length} estudiantes cargados`, false);
-                        return;
-                    }
+                const response = await fetch(`${API_URL}/api/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`, { 
+                    method: 'POST' 
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    token = data.token;
+                    docenteActual = data.docente;
+                    localStorage.setItem('token', token);
+                    localStorage.setItem('docente', JSON.stringify(docenteActual));
+                    
+                    document.getElementById('loginSection').style.display = 'none';
+                    document.getElementById('correctorSection').style.display = 'block';
+                    document.getElementById('docenteNombre').innerHTML = `${docenteActual.nombre}`;
+                    
+                    await cargarMisAlumnos();
+                } else {
+                    errorDiv.textContent = data.error || 'Credenciales inválidas';
                 }
-                throw new Error("Cargando datos locales");
             } catch (error) {
-                // Fallback a datos locales si no hay conexión
-                alumnos = [
-                    { id: 1, nombre: "Valentina Rojas", grado: 11, promedio: 98 },
-                    { id: 2, nombre: "Mateo Herrera", grado: 10, promedio: 85 },
-                    { id: 3, nombre: "Sofia Ramirez", grado: 11, promedio: 96 },
-                    { id: 4, nombre: "Isabella Torres", grado: 11, promedio: 100 }
-                ];
+                errorDiv.textContent = 'Error de conexión: ' + error.message;
+            }
+        }
+
+        function logout() {
+            token = null;
+            docenteActual = null;
+            localStorage.removeItem('token');
+            localStorage.removeItem('docente');
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('correctorSection').style.display = 'none';
+            document.getElementById('email').value = 'ana@eduscan.com';
+            document.getElementById('password').value = '';
+            document.getElementById('selectAlumno').innerHTML = '<option value="">-- Seleccionar estudiante --</option>';
+            document.getElementById('resultadoArea').className = 'resultado';
+            document.getElementById('resultadoArea').innerHTML = '';
+        }
+
+        // ============================================
+        // CARGAR SOLO LOS ALUMNOS DEL DOCENTE
+        // ============================================
+        async function cargarMisAlumnos() {
+            if (!token) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/mis-alumnos`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    alumnos = data.alumnos || [];
+                    actualizarSelectores();
+                    mostrarToast(`✅ ${alumnos.length} estudiantes asignados`, false);
+                    
+                    if (data.mis_grados) {
+                        console.log(`Grados asignados: ${data.mis_grados.join(', ')}`);
+                    }
+                } else {
+                    mostrarToast('Error cargando alumnos', true);
+                }
+            } catch (error) {
+                console.error('Error cargando alumnos:', error);
+                mostrarToast('Error de conexión', true);
+                alumnos = [];
                 actualizarSelectores();
-                mostrarToast("📚 Modo local - Datos de ejemplo", true);
             }
         }
         
@@ -386,7 +492,7 @@
             if (!selectAlumno) return;
             selectAlumno.innerHTML = '<option value="">🎓 -- Seleccionar estudiante --</option>';
             alumnos.forEach(a => {
-                selectAlumno.innerHTML += `<option value="${a.id}">${a.nombre} (${a.grado}° grado)</option>`;
+                selectAlumno.innerHTML += `<option value="${a.id}">${a.nombre} (${a.grado}° grado) - Prom: ${a.promedio || 0}</option>`;
             });
         }
         
@@ -502,7 +608,6 @@
             resultDiv.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Procesando con IA... Analizando respuestas';
             
             try {
-                // Convertir dataURL a Blob
                 const blob = await (await fetch(currentImageData)).blob();
                 const formData = new FormData();
                 formData.append('imagen', blob, 'examen.jpg');
@@ -550,7 +655,7 @@
         }
         
         // ============================================
-        // GUARDAR CALIFICACIÓN EN LA BASE DE DATOS
+        // GUARDAR CALIFICACIÓN
         // ============================================
         async function guardarCalificacion() {
             if (!ultimaCorreccion) {
@@ -570,22 +675,15 @@
             };
             
             try {
-                // Primero intentar guardar en la API real
                 const response = await fetch(`${API_URL}/nueva_evaluacion`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify(evaluacion)
                 });
                 
                 if (response.ok) {
-                    mostrarToast(`✅ Calificación ${ultimaCorreccion.nota}% guardada en la nube`, false);
+                    mostrarToast(`✅ Calificación ${ultimaCorreccion.nota}% guardada`, false);
                     
-                    // También guardar en localStorage como respaldo
-                    let calificaciones = JSON.parse(localStorage.getItem('eduscan_calificaciones') || '[]');
-                    calificaciones.push(ultimaCorreccion);
-                    localStorage.setItem('eduscan_calificaciones', JSON.stringify(calificaciones));
-                    
-                    // Resetear formulario
                     document.getElementById('btnCorregir').disabled = true;
                     currentImageData = null;
                     document.getElementById('previewImg').style.display = 'none';
@@ -595,18 +693,13 @@
                     document.getElementById('resultadoArea').className = 'resultado';
                     document.getElementById('resultadoArea').innerHTML = '';
                     
-                    // Recargar la lista de alumnos para actualizar promedios
-                    await cargarAlumnos();
+                    await cargarMisAlumnos();
                 } else {
                     const errorData = await response.json();
-                    mostrarToast(`Error al guardar: ${errorData.error || 'Desconocido'}`, true);
+                    mostrarToast(`Error: ${errorData.error || 'Desconocido'}`, true);
                 }
             } catch (error) {
-                // Fallback: guardar solo en localStorage
-                let calificaciones = JSON.parse(localStorage.getItem('eduscan_calificaciones') || '[]');
-                calificaciones.push(ultimaCorreccion);
-                localStorage.setItem('eduscan_calificaciones', JSON.stringify(calificaciones));
-                mostrarToast(`⚠️ Calificación guardada solo localmente. Error: ${error.message}`, true);
+                mostrarToast(`Error: ${error.message}`, true);
             }
         }
         
@@ -619,7 +712,17 @@
         document.getElementById('fileInput').onchange = handleImageUpload;
         document.getElementById('btnCorregir').onclick = corregirExamen;
         
-        cargarAlumnos();
+        // Verificar sesión guardada
+        const savedToken = localStorage.getItem('token');
+        const savedDocente = localStorage.getItem('docente');
+        if (savedToken && savedDocente) {
+            token = savedToken;
+            docenteActual = JSON.parse(savedDocente);
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('correctorSection').style.display = 'block';
+            document.getElementById('docenteNombre').innerHTML = docenteActual.nombre;
+            cargarMisAlumnos();
+        }
     </script>
 </body>
 </html>
