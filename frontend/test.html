@@ -1,1 +1,72 @@
-EduScan funciona!
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EduScan - Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #1e3c72; }
+        .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 10px; padding: 20px; }
+        pre { background: #f0f0f0; padding: 10px; overflow-x: auto; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📚 EduScan - Test de Conexión</h2>
+        <button onclick="testLogin()">Probar Login</button>
+        <div id="resultado">
+            <p>Haz clic en "Probar Login"</p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://eduscan-gateway.onrender.com';
+        
+        async function testLogin() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = '<p>Cargando...</p>';
+            
+            try {
+                // 1. Probar login
+                resultado.innerHTML += '<p>🔐 Probando login con ana@eduscan.com / 123...</p>';
+                const loginRes = await fetch(`${API_URL}/api/login?email=ana@eduscan.com&password=123`, {
+                    method: 'POST'
+                });
+                const loginData = await loginRes.json();
+                resultado.innerHTML += `<p>📥 Respuesta login: <pre>${JSON.stringify(loginData, null, 2)}</pre></p>`;
+                
+                if (!loginData.token) {
+                    resultado.innerHTML += `<p class="error">❌ Error: No se obtuvo token</p>`;
+                    return;
+                }
+                
+                // 2. Obtener alumnos
+                resultado.innerHTML += `<p>🔑 Token obtenido: ${loginData.token.substring(0, 50)}...</p>`;
+                resultado.innerHTML += `<p>👨‍🏫 Docente: ${loginData.docente.nombre}</p>`;
+                
+                const alumnosRes = await fetch(`${API_URL}/api/mis-alumnos`, {
+                    headers: { 'Authorization': `Bearer ${loginData.token}` }
+                });
+                const alumnosData = await alumnosRes.json();
+                resultado.innerHTML += `<p>📋 Respuesta alumnos: <pre>${JSON.stringify(alumnosData, null, 2)}</pre></p>`;
+                
+                if (alumnosData.success && alumnosData.alumnos) {
+                    resultado.innerHTML += `<p class="success">✅ Total de alumnos: ${alumnosData.alumnos.length}</p>`;
+                    if (alumnosData.alumnos.length > 0) {
+                        resultado.innerHTML += `<h3>Lista de Alumnos:</h3><ul>`;
+                        alumnosData.alumnos.forEach(a => {
+                            resultado.innerHTML += `<li>${a.nombre} - ${a.grado}° - Promedio: ${a.promedio}</li>`;
+                        });
+                        resultado.innerHTML += `</ul>`;
+                    }
+                } else {
+                    resultado.innerHTML += `<p class="error">❌ No se pudieron cargar los alumnos</p>`;
+                }
+                
+            } catch (error) {
+                resultado.innerHTML += `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
