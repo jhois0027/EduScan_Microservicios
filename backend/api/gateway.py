@@ -27,6 +27,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 horas
 
 security = HTTPBearer()
 
+
 # ============================================
 # FUNCIONES DE AUTENTICACIÓN
 # ============================================
@@ -699,6 +700,43 @@ async def cambiar_password(email: str, nueva_password: str):
     except Exception as e:
         return {"success": False, "error": str(e)}
        
+
+       # ============================================
+# INSERTAR ALUMNOS DE PRUEBA
+# ============================================
+@app.get("/api/insertar-alumnos-prueba")
+async def insertar_alumnos_prueba():
+    import psycopg2
+    
+    try:
+        DATABASE_URL = os.getenv('DATABASE_URL')
+        conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+        conn.autocommit = True
+        cur = conn.cursor()
+        
+        # Insertar alumnos para grados 10 y 11 (los que ve Ana)
+        alumnos_data = [
+            ('Valentina Rojas', 'valentina@email.com', 11, 95),
+            ('Mateo Herrera', 'mateo@email.com', 10, 85),
+            ('Sofia Ramirez', 'sofia@email.com', 11, 98),
+            ('Isabella Torres', 'isabella@email.com', 11, 92),
+            ('Camila Ortiz', 'camila@email.com', 10, 88),
+        ]
+        
+        for alumno in alumnos_data:
+            cur.execute("""
+                INSERT INTO alumnos (nombre, correo, grado, promedio) 
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (correo) DO NOTHING
+            """, alumno)
+        
+        cur.close()
+        conn.close()
+        
+        return {"success": True, "message": f"Insertados {len(alumnos_data)} alumnos de prueba"}
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 # ============================================
 # MAIN
 # ============================================
