@@ -701,8 +701,8 @@ async def cambiar_password(email: str, nueva_password: str):
         return {"success": False, "error": str(e)}
        
 
-       # ============================================
-# INSERTAR ALUMNOS DE PRUEBA
+  # ============================================
+# INSERTAR ALUMNOS DE PRUEBA POR PROFESOR
 # ============================================
 @app.get("/api/insertar-alumnos-prueba")
 async def insertar_alumnos_prueba():
@@ -710,20 +710,45 @@ async def insertar_alumnos_prueba():
     
     try:
         DATABASE_URL = os.getenv('DATABASE_URL')
+        
+        if not DATABASE_URL:
+            return {"success": False, "error": "DATABASE_URL no configurada"}
+        
         conn = psycopg2.connect(DATABASE_URL, sslmode='require')
         conn.autocommit = True
         cur = conn.cursor()
         
-        # Insertar alumnos para grados 10 y 11 (los que ve Ana)
-        alumnos_data = [
+        # ========== ALUMNOS PARA LA PROFE ANA (grados 10 y 11) ==========
+        alumnos_ana = [
             ('Valentina Rojas', 'valentina@email.com', 11, 95),
             ('Mateo Herrera', 'mateo@email.com', 10, 85),
             ('Sofia Ramirez', 'sofia@email.com', 11, 98),
             ('Isabella Torres', 'isabella@email.com', 11, 92),
             ('Camila Ortiz', 'camila@email.com', 10, 88),
+            ('Lucas Mendoza', 'lucas@email.com', 10, 75),
+            ('Daniela Paz', 'daniela@email.com', 11, 90),
         ]
         
-        for alumno in alumnos_data:
+        # ========== ALUMNOS PARA EL PROFE CARLOS (grados 8 y 9) ==========
+        alumnos_carlos = [
+            ('Samuel Gomez', 'samuel@email.com', 8, 78),
+            ('Lucia Mendez', 'lucia@email.com', 9, 88),
+            ('Diego Fernandez', 'diego@email.com', 8, 68),
+            ('Javier Castro', 'javier@email.com', 9, 75),
+            ('Andres Silva', 'andres@email.com', 8, 82),
+            ('Carolina Reyes', 'carolina@email.com', 9, 91),
+        ]
+        
+        # Insertar alumnos de Ana
+        for alumno in alumnos_ana:
+            cur.execute("""
+                INSERT INTO alumnos (nombre, correo, grado, promedio) 
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (correo) DO NOTHING
+            """, alumno)
+        
+        # Insertar alumnos de Carlos
+        for alumno in alumnos_carlos:
             cur.execute("""
                 INSERT INTO alumnos (nombre, correo, grado, promedio) 
                 VALUES (%s, %s, %s, %s)
@@ -733,10 +758,15 @@ async def insertar_alumnos_prueba():
         cur.close()
         conn.close()
         
-        return {"success": True, "message": f"Insertados {len(alumnos_data)} alumnos de prueba"}
+        return {
+            "success": True, 
+            "message": f"Insertados {len(alumnos_ana)} alumnos para Ana (grados 10-11) y {len(alumnos_carlos)} alumnos para Carlos (grados 8-9)",
+            "total": len(alumnos_ana) + len(alumnos_carlos)
+        }
         
     except Exception as e:
         return {"success": False, "error": str(e)}
+    
 # ============================================
 # MAIN
 # ============================================
