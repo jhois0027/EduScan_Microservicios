@@ -1,300 +1,189 @@
 import cv2
 import numpy as np
-import google.generativeai as genai
 import os
 import re
 import json
+import base64
+import google.generativeai as genai
+from PIL import Image
+import io
 
 # --------------------------------
-# VALIDADOR DE CALIDAD DE IMAGEN
+# VALIDADOR DE CALIDAD
 # --------------------------------
 
-class ValidadorCalidad:
-    """Valida la calidad de la imagen antes de procesar"""
-    
-    def validar(self, imagen):
-        if imagen is None:
-            return False, "Imagen inválida", 0
+def validar_calidad_imagen(imagen_bytes):
+    try:
+        nparr = np.frombuffer(imagen_bytes, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
-        alto, ancho = imagen.shape[:2]
+        if img is None:
+            return False, "No se pudo leer la imagen", 0
         
-        if alto < 300 or ancho < 300:
-            return False, "Imagen demasiado pequeña (mínimo 300x300)", 0
-        
-        gray = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
-        
-        # 1. Nitidez (varianza del Laplaciano)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
         
-        if laplacian_var < 100:
-            return False, f"Imagen borrosa (nitidez: {laplacian_var:.1f} < 100)", laplacian_var
+        if laplacian_var < 80:
+            return False, f"Imagen borrosa. Toma una foto más nítida.", laplacian_var
         
-        # 2. Contraste
-        contraste = gray.std()
-        if contraste < 30:
-            return False, f"Contraste bajo ({contraste:.1f} < 30)", contraste
-        
-        # 3. Brillo
-        brillo = gray.mean()
-        if brillo < 50 or brillo > 200:
-            return False, f"Brillo inadecuado ({brillo:.1f})", brillo
-        
-        # Calcular confianza de calidad
-        confianza = min(1.0, laplacian_var / 300) * 0.5 + min(1.0, contraste / 80) * 0.3 + 0.2
-        
+        if laplacian_var > 500:
+            confianza = 0.9
+        elif laplacian_var > 200:
+            confianza = 0.8
+        else:
+            confianza = 0.6
+            
         return True, "Calidad aceptable", round(confianza, 2)
-
-
-# --------------------------------
-# DETECTOR DE RESPUESTAS
-# --------------------------------
-
-class DetectorRespuestas:
-    """Detecta burbujas marcadas en hoja de respuestas"""
-    
-    def detectar_respuestas(self, imagen):
-        if imagen is None:
-            return [], 0
         
-        gray = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
-        
-        # Mejorar contraste
-        gray = cv2.equalizeHist(gray)
-        
-        # Umbral adaptativo
-        thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                        cv2.THRESH_BINARY_INV, 11, 2)
-        
-        # Encontrar contornos
-        contornos, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
-        # Filtrar burbujas por área
-        burbujas = []
-        for cont in contornos:
-            area = cv2.contourArea(cont)
-            if 150 < area < 1000:
-                x, y, w, h = cv2.boundingRect(cont)
-                burbujas.append({
-                    'bbox': (x, y, w, h),
-                    'area': area,
-                    'centro': (x + w//2, y + h//2)
-                })
-        
-        if len(burbujas) < 20:
-            return [], 0
-        
-        # Agrupar por fila
-        filas = {}
-        for b in burbujas:
-            y = b['centro'][1]
-            encontrado = False
-            for y_ref in list(filas.keys()):
-                if abs(y - y_ref) <= 20:
-                    filas[y_ref].append(b)
-                    encontrado = True
-                    break
-            if not encontrado:
-                filas[y] = [b]
-        
-        # Ordenar y seleccionar respuestas
-        respuestas = []
-        opciones = ['A', 'B', 'C', 'D', 'E']
-        
-        for y in sorted(filas.keys()):
-            fila = sorted(filas[y], key=lambda b: b['centro'][0])
-            if len(fila) >= 4:
-                mejor = max(fila, key=lambda b: b['area'])
-                idx = fila.index(mejor)
-                if idx < len(opciones):
-                    respuestas.append(opciones[idx])
-                else:
-                    respuestas.append('?')
-        
-        confianza = min(1.0, len(respuestas) / 50)
-        
-        return respuestas[:30], round(confianza, 2)
+    except Exception as e:
+        return False, str(e), 0
 
 
 # --------------------------------
 # CORRECTOR CON GEMINI
 # --------------------------------
 
-class CorrectorGemini:
-    """Corrección de exámenes usando Gemini AI"""
-    
-    def __init__(self):
-        api_key = os.getenv('GEMINI_API_KEY')
-        if api_key:
-            genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel('gemini-1.5-pro')
-        else:
-            self.model = None
-    
-    def _obtener_estado_nota(self, nota_escala_5):
-        """Devuelve estado según escala 0-5"""
-        if nota_escala_5 < 3.6:
-            return "Reprueba"
-        elif nota_escala_5 < 4.0:
-            return "Plan de mejoramiento"
-        else:
-            return "Aprueba"
-    
-    def corregir(self, imagen_bytes, respuestas_estudiante=None):
-        """Corrige examen usando Gemini (escala 0-5)"""
-        
-        if self.model is None:
-            return self._corregir_simulado(respuestas_estudiante)
-        
-        try:
-            image_file = {
-                "mime_type": "image/jpeg",
-                "data": imagen_bytes
-            }
-            
-            # Prompt con escala 0-5
-            prompt = """
-            Eres un corrector de exámenes EXPERTO. ESCALA DE NOTAS: 0.0 a 5.0
-
-            ### REGLAS DE CORRECCIÓN (ESCALA 0-5):
-            1. Cada respuesta correcta suma hasta 1 punto (dependiendo de la pregunta)
-            2. Nota final: suma de puntos obtenidos
-            3. RANGO DE NOTAS:
-               - 0.0 a 3.5 = REPRUEBA
-               - 3.6 a 3.9 = PLAN DE MEJORAMIENTO
-               - 4.0 a 5.0 = APRUEBA
-            
-            4. Respuesta en blanco o "no sé" = 0 puntos
-            5. Respuesta parcialmente correcta = 0.5 puntos (si tiene al menos 50% correcto)
-            6. Penaliza ortografía incorrecta: -0.1 punto por error grave (máximo -0.5)
-            
-            ### FORMATO DE RESPUESTA (SOLO JSON):
-            {
-                "nota": "número entre 0.0 y 5.0 (ej: 4.2)",
-                "puntaje_obtenido": "número",
-                "puntaje_total": "número (máximo 5.0)",
-                "respuestas_detalle": [
-                    {"numero": 1, "puntaje": 1.0, "feedback": "correcto"},
-                    {"numero": 2, "puntaje": 0.5, "feedback": "parcialmente correcto"},
-                    {"numero": 3, "puntaje": 0.0, "feedback": "incorrecto"}
-                ],
-                "feedback_general": "texto breve (máx 100 caracteres)",
-                "confianza": "número entre 0 y 1",
-                "estado": "Reprueba | Plan de mejoramiento | Aprueba"
-            }
-
-            CORRIGE EL EXAMEN DE LA IMAGEN USANDO ESCALA 0-5.
-            """
-            
-            response = self.model.generate_content(
-                [prompt, image_file],
-                generation_config={
-                    "temperature": 0.1,
-                    "top_p": 0.85,
-                    "max_output_tokens": 2000
-                }
-            )
-            
-            texto = response.text
-            json_match = re.search(r'\{[\s\S]*\}', texto)
-            
-            if json_match:
-                resultado = json.loads(json_match.group())
-                resultado['success'] = True
-                
-                # Asegurar formato correcto
-                nota = resultado.get('nota', 0)
-                resultado['estado'] = self._obtener_estado_nota(nota)
-                resultado['nota'] = round(nota, 1)
-                
-                return resultado
-            else:
-                return self._corregir_simulado(respuestas_estudiante)
-                
-        except Exception as e:
-            print(f"Error en Gemini: {e}")
-            return self._corregir_simulado(respuestas_estudiante)
-    
-    def _corregir_simulado(self, respuestas_estudiante=None):
-        """Fallback: corrección simulada en escala 0-5"""
-        if respuestas_estudiante and len(respuestas_estudiante) >= 10:
-            clave = ['A','B','C','D','A','B','C','D','A','B']
-            aciertos = sum(1 for r, c in zip(respuestas_estudiante[:10], clave) if r == c)
-            nota = round((aciertos / 10) * 5.0, 1)
-        else:
-            nota = round(np.random.uniform(3.0, 4.8), 1)
-        
-        estado = self._obtener_estado_nota(nota)
-        
-        return {
-            "success": True,
-            "nota": nota,
-            "puntaje_obtenido": nota,
-            "puntaje_total": 5.0,
-            "respuestas_detalle": [],
-            "feedback_general": f"Nota: {nota} - {estado}",
-            "confianza": 0.7,
-            "estado": estado,
-            "mejora_sugerida": "Revisar conceptos básicos" if nota < 3.6 else "Continuar así"
-        }
-
-
-# --------------------------------
-# FUNCIÓN PRINCIPAL PARA GATEWAY
-# --------------------------------
-
 def procesar_imagen_examen(imagen_bytes):
-    """Función principal que integra todo el proceso"""
+    """Corrige examen usando Gemini AI con análisis real"""
     
-    try:
-        # Decodificar imagen
-        nparr = np.frombuffer(imagen_bytes, np.uint8)
-        imagen = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        
-        if imagen is None:
-            return {
-                "success": False,
-                "error": "No se pudo leer la imagen",
-                "nota": 0,
-                "confianza": 0,
-                "estado": "Error"
-            }
-        
-        # 1. Validar calidad
-        validador = ValidadorCalidad()
-        es_valida, mensaje, calidad = validador.validar(imagen)
-        
-        if not es_valida:
-            return {
-                "success": False,
-                "error": mensaje,
-                "nota": 0,
-                "confianza": calidad,
-                "estado": "Error",
-                "feedback": f"La imagen no cumple estándares: {mensaje}"
-            }
-        
-        # 2. Detectar respuestas (opcional)
-        detector = DetectorRespuestas()
-        respuestas, confianza_deteccion = detector.detectar_respuestas(imagen)
-        
-        # 3. Corregir con Gemini
-        corrector = CorrectorGemini()
-        resultado = corrector.corregir(imagen_bytes, respuestas)
-        
-        # 4. Agregar metadata de calidad
-        resultado['calidad_imagen'] = {
-            "valida": es_valida,
-            "confianza_calidad": calidad,
-            "confianza_deteccion": confianza_deteccion if respuestas else 0
-        }
-        
-        return resultado
-        
-    except Exception as e:
+    print("📸 Procesando imagen...")
+    
+    # Validar calidad
+    valida, mensaje, calidad = validar_calidad_imagen(imagen_bytes)
+    
+    if not valida:
         return {
             "success": False,
-            "error": str(e),
+            "error": mensaje,
+            "nota": 0,
+            "confianza": calidad,
+            "feedback": f"Calidad insuficiente: {mensaje}"
+        }
+    
+    print(f"✅ Calidad aceptable (confianza: {calidad})")
+    
+    # Configurar Gemini
+    api_key = os.getenv('GEMINI_API_KEY')
+    
+    if not api_key:
+        print("❌ GEMINI_API_KEY no configurada")
+        return {
+            "success": False,
+            "error": "GEMINI_API_KEY no configurada en variables de entorno",
             "nota": 0,
             "confianza": 0,
-            "estado": "Error"
+            "feedback": "Error: API key no encontrada"
+        }
+    
+    try:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # Preparar imagen
+        image = Image.open(io.BytesIO(imagen_bytes))
+        
+        print("🤖 Enviando a Gemini para análisis...")
+        
+        # Prompt detallado para corrección precisa
+        prompt = """
+        Eres un corrector de exámenes profesional. Analiza DETALLADAMENTE la imagen del examen.
+
+        ### INSTRUCCIONES:
+        1. Lee TODAS las respuestas del estudiante
+        2. Evalúa cada respuesta según su corrección
+        3. Calcula la nota en escala de 0.0 a 5.0
+        
+        ### ESCALA DE NOTAS:
+        - 5.0: Todas las respuestas son correctas y completas
+        - 4.0 - 4.9: Mayoría de respuestas correctas, algunos errores menores
+        - 3.0 - 3.9: Aproximadamente la mitad de las respuestas correctas
+        - 1.0 - 2.9: Pocas respuestas correctas
+        - 0.0: No respondió nada o todo incorrecto
+        
+        ### REGLAS ADICIONALES:
+        - Si la respuesta es correcta pero tiene errores de ortografía, baja 0.1
+        - Si la respuesta está incompleta, da la mitad del puntaje
+        - Si no se entiende la respuesta, es incorrecta
+        
+        ### RESPUESTA (SOLO JSON, NADA MÁS):
+        {
+            "nota": 4.2,
+            "preguntas_totales": 10,
+            "respuestas_correctas": 8,
+            "feedback": "Buen trabajo en la mayoría de preguntas. Revisar conceptos de...",
+            "debilidades": ["tema que debe mejorar"],
+            "fortalezas": ["tema que domina"],
+            "confianza": 0.9
+        }
+        """
+        
+        response = model.generate_content([prompt, image])
+        
+        print("📥 Respuesta recibida de Gemini")
+        
+        # Extraer JSON
+        texto = response.text
+        print(f"Respuesta raw: {texto[:200]}...")
+        
+        json_match = re.search(r'\{[\s\S]*?\}', texto)
+        
+        if json_match:
+            resultado = json.loads(json_match.group())
+            nota = float(resultado.get('nota', 0))
+            nota = max(0, min(5, nota))  # Limitar entre 0 y 5
+            
+            # Determinar estado según la nueva escala
+            if nota < 3.6:
+                estado_texto = "Reprueba"
+                emoji = "❌"
+            elif nota < 4.0:
+                estado_texto = "Plan de mejoramiento"
+                emoji = "⚠️"
+            else:
+                estado_texto = "Aprueba"
+                emoji = "✅"
+            
+            feedback = resultado.get('feedback', f"{emoji} Nota: {nota} - {estado_texto}")
+            
+            # Agregar detalles de preguntas si existen
+            preguntas_correctas = resultado.get('respuestas_correctas', 0)
+            preguntas_totales = resultado.get('preguntas_totales', 10)
+            
+            porcentaje = (preguntas_correctas / preguntas_totales) * 100 if preguntas_totales > 0 else nota * 20
+            
+            return {
+                "success": True,
+                "nota": round(nota, 1),
+                "nota_porcentaje": round(porcentaje, 1),
+                "confianza": resultado.get('confianza', calidad),
+                "feedback": feedback,
+                "estado": estado_texto,
+                "respuestas_correctas": preguntas_correctas,
+                "preguntas_totales": preguntas_totales,
+                "debilidades": resultado.get('debilidades', []),
+                "fortalezas": resultado.get('fortalezas', []),
+                "detalles_validacion": [
+                    "✅ Imagen procesada correctamente",
+                    f"🤖 IA confianza: {resultado.get('confianza', calidad)}",
+                    f"📊 {preguntas_correctas}/{preguntas_totales} respuestas correctas"
+                ]
+            }
+        else:
+            print("❌ No se encontró JSON en la respuesta")
+            return {
+                "success": False,
+                "error": "No se pudo interpretar la respuesta de la IA",
+                "nota": 0,
+                "confianza": 0,
+                "feedback": "Error en el formato de respuesta"
+            }
+            
+    except Exception as e:
+        print(f"❌ Error en Gemini: {str(e)}")
+        return {
+            "success": False,
+            "error": f"Error en IA: {str(e)}",
+            "nota": 0,
+            "confianza": 0,
+            "feedback": f"Error técnico: {str(e)}"
         }
