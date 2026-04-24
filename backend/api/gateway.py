@@ -624,6 +624,10 @@ async def inicializar_base_datos():
             "success": False,
             "error": f"Error inesperado: {str(e)}"
         }
+
+# ============================================
+# NUEVA EVALUACIÓN
+# ============================================
 @app.post("/nueva_evaluacion")
 async def nueva_evaluacion(request: Request):
     """Guardar nueva evaluación en la base de datos"""
@@ -656,6 +660,41 @@ async def nueva_evaluacion(request: Request):
         conn.close()
         
         return {"success": True}
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+# ============================================
+# CAMBIAR CONTRASEÑA (CONTRASEÑA CORTA)
+# ============================================
+@app.get("/api/cambiar-pass/{email}/{nueva_password}")
+async def cambiar_password(email: str, nueva_password: str):
+    """Cambia la contraseña de un docente a una más corta"""
+    import psycopg2
+    import bcrypt
+    
+    try:
+        DATABASE_URL = os.getenv('DATABASE_URL')
+        
+        if not DATABASE_URL:
+            return {"success": False, "error": "DATABASE_URL no configurada"}
+        
+        conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+        conn.autocommit = True
+        cur = conn.cursor()
+        
+        # Generar hash de la nueva contraseña
+        hashed = bcrypt.hashpw(nueva_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        
+        cur.execute("UPDATE docentes SET password_hash = %s WHERE email = %s", (hashed, email))
+        
+        cur.close()
+        conn.close()
+        
+        return {
+            "success": True, 
+            "message": f"Contraseña para {email} cambiada a '{nueva_password}'"
+        }
         
     except Exception as e:
         return {"success": False, "error": str(e)}
