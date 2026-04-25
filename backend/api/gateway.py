@@ -627,11 +627,11 @@ async def inicializar_base_datos():
         }
 
 # ============================================
-# NUEVA EVALUACIÓN
+# NUEVA EVALUACIÓN (ACTUALIZA PROMEDIO - ESCALA 0-5)
 # ============================================
 @app.post("/nueva_evaluacion")
 async def nueva_evaluacion(request: Request):
-    """Guardar nueva evaluación en la base de datos"""
+    """Guardar nueva evaluación y actualizar promedio del alumno (escala 0-5)"""
     import psycopg2
     
     try:
@@ -642,25 +642,42 @@ async def nueva_evaluacion(request: Request):
             return {"success": False, "error": "DATABASE_URL no configurada"}
         
         conn = psycopg2.connect(DATABASE_URL)
+        conn.autocommit = True
         cursor = conn.cursor()
         
+        # Insertar la nueva evaluación (puntaje ya está en escala 0-5)
         cursor.execute("""
             INSERT INTO evaluacion (id_alumno, puntaje, fecha, examen_nombre, feedback, confianza_validacion)
             VALUES (%s, %s, %s, %s, %s, %s)
         """, (
             data.get('id_alumno'),
-            data.get('puntaje'),
+            data.get('puntaje'),  # Ya es 0-5
             data.get('fecha'),
             data.get('examen_nombre'),
             data.get('feedback'),
             data.get('confianza_validacion', 0.85)
         ))
         
-        conn.commit()
+        # Calcular el nuevo promedio del alumno (escala 0-5)
+        cursor.execute("""
+            SELECT AVG(puntaje) FROM evaluacion WHERE id_alumno = %s
+        """, (data.get('id_alumno'),))
+        
+        nuevo_promedio = cursor.fetchone()[0]
+        
+        # Actualizar el promedio en la tabla alumnos (escala 0-5)
+        cursor.execute("""
+            UPDATE alumnos SET promedio = %s WHERE id_alumno = %s
+        """, (nuevo_promedio, data.get('id_alumno')))
+        
         cursor.close()
         conn.close()
         
-        return {"success": True}
+        return {
+            "success": True, 
+            "message": f"Calificación {data.get('puntaje')}/5.0 guardada",
+            "nuevo_promedio": round(nuevo_promedio, 1)
+        }
         
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -864,6 +881,30 @@ async def crear_carlos():
         conn.close()
         
         return {"success": True, "message": mensaje}
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    
+
+    # ============================================
+# LISTAR MODELOS DE GEMINI DISPONIBLES
+# ============================================
+@app.get("/api/listar-modelos")
+async def listar_modelos():
+    import google.generativeai as genai
+    
+    try:
+        api_key = os.getenv('GEMINI_API_KEY')
+        if not api_key:
+            return {"success": False, "error": "GEMINI_API_KEY no configurada"}
+        
+        genai.configure(api_key=api_key)
+        modelos = []
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods:
+                modelos.append(m.name)
+        
+        return {"success": True, "modelos": modelos}
         
     except Exception as e:
         return {"success": False, "error": str(e)}

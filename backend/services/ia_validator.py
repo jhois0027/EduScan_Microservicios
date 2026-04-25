@@ -95,7 +95,7 @@ def procesar_imagen_examen(imagen_bytes):
         
         ### ESCALA DE NOTAS:
         - 5.0: Todas las respuestas son correctas y completas
-        - 4.0 - 4.9: Mayoría de respuestas correctas, algunos errores menores
+        - 4.0 - 4.9: Mayoría de respuestas correctas
         - 3.0 - 3.9: Aproximadamente la mitad de las respuestas correctas
         - 1.0 - 2.9: Pocas respuestas correctas
         - 0.0: No respondió nada o todo incorrecto
@@ -133,10 +133,10 @@ def procesar_imagen_examen(imagen_bytes):
             nota = max(0, min(5, nota))  # Limitar entre 0 y 5
             
             # Determinar estado según la nueva escala
-            if nota < 3.6:
+            if nota < 3.0:
                 estado_texto = "Reprueba"
                 emoji = "❌"
-            elif nota < 4.0:
+            elif nota < 3.8:
                 estado_texto = "Plan de mejoramiento"
                 emoji = "⚠️"
             else:
@@ -149,7 +149,7 @@ def procesar_imagen_examen(imagen_bytes):
             preguntas_correctas = resultado.get('respuestas_correctas', 0)
             preguntas_totales = resultado.get('preguntas_totales', 10)
             
-            porcentaje = (preguntas_correctas / preguntas_totales) * 100 if preguntas_totales > 0 else nota * 20
+            porcentaje = (preguntas_correctas / preguntas_totales) * 5 if preguntas_totales > 0 else nota * 20
             
             return {
                 "success": True,
@@ -187,3 +187,4 @@ def procesar_imagen_examen(imagen_bytes):
             "confianza": 0,
             "feedback": f"Error técnico: {str(e)}"
         }
+    

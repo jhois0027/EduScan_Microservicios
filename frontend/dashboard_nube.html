@@ -321,35 +321,36 @@
         }
         
        function renderStudents() {
-    console.log('🎨 Renderizando estudiantes. Total:', misAlumnos.length);
-    
     if (misAlumnos.length === 0) {
         return `<div class="data-table"><p style="text-align: center; padding: 40px;">📭 No tienes estudiantes asignados</p></div>`;
     }
-            
-            return `
-                <div class="data-table">
-                    <h2 style="margin-bottom: 20px;">📋 Lista de Mis Estudiantes</h2>
-                    <table>
-                        <thead>
-                            <tr><th>ID</th><th>Nombre</th><th>Grado</th><th>Email</th><th>Promedio</th><th>Estado</th></tr>
-                        </thead>
-                        <tbody>
-                            ${misAlumnos.map(alumno => `
-                                <tr>
-                                    <td>${alumno.id}</td>
-                                    <td><strong>${alumno.nombre}</strong></td>
-                                    <td><span class="badge" style="background:#e0e7ff">${alumno.grado}°</span></td>
-                                    <td>${alumno.correo || '-'}</td>
-                                    <td>${alumno.promedio || 0}</td>
-                                    <td><span class="badge ${(alumno.promedio || 0) >= 60 ? 'badge-aprobado' : 'badge-reprobado'}">${(alumno.promedio || 0) >= 60 ? 'Aprobado' : 'En curso'}</span></td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
+    
+    return `
+        <div class="data-table">
+            <h2 style="margin-bottom: 20px;">📋 Lista de Mis Estudiantes</h2>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Nombre</th><th>Grado</th><th>Promedio</th><th>Estado</th></tr>
+                </thead>
+                <tbody>
+                    ${misAlumnos.map(alumno => {
+                        const promedio = alumno.promedio || 0;
+                        const estado = promedio >= 3.6 ? 'Aprobado' : (promedio >= 3.0 ? 'Plan de mejoramiento' : 'Reprueba');
+                        const clase = promedio >= 3.6 ? 'badge-aprobado' : 'badge-reprobado';
+                        return `
+                        <tr>
+                            <td>${alumno.id}</td>
+                            <td><strong>${alumno.nombre}</strong></td>
+                            <td>${alumno.grado}°</td>
+                            <td>${promedio}/5.0</td>
+                            <td><span class="badge ${clase}">${estado}</span></td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
         
         function renderGrades() {
             if (misCalificaciones.length === 0) {
