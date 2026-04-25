@@ -792,6 +792,82 @@ async def insertar_alumnos_prueba():
     except Exception as e:
         return {"success": False, "error": str(e)}
     
+    # ============================================
+# AGREGAR COLUMNA EXAMEN_NOMBRE A EVALUACION
+# ============================================
+@app.get("/api/agregar-columna-examen")
+async def agregar_columna_examen():
+    import psycopg2
+    
+    try:
+        DATABASE_URL = os.getenv('DATABASE_URL')
+        conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+        conn.autocommit = True
+        cur = conn.cursor()
+        
+        # Agregar columna examen_nombre
+        cur.execute("ALTER TABLE evaluacion ADD COLUMN IF NOT EXISTS examen_nombre VARCHAR(200)")
+        cur.execute("ALTER TABLE evaluacion ADD COLUMN IF NOT EXISTS confianza_validacion DECIMAL(5,2)")
+        
+        cur.close()
+        conn.close()
+        
+        return {"success": True, "message": "Columnas agregadas correctamente"}
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    
+
+    # ============================================
+# CREAR PROFESOR CARLOS
+# ============================================
+@app.get("/api/crear-carlos")
+async def crear_carlos():
+    import psycopg2
+    import bcrypt
+    
+    try:
+        DATABASE_URL = os.getenv('DATABASE_URL')
+        conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+        conn.autocommit = True
+        cur = conn.cursor()
+        
+        # Verificar si Carlos ya existe
+        cur.execute("SELECT id_docente FROM docentes WHERE email = 'carlos@eduscan.com'")
+        existe = cur.fetchone()
+        
+        if existe:
+            # Actualizar contraseña a 123
+            hash_pass = bcrypt.hashpw('123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            cur.execute("UPDATE docentes SET password_hash = %s WHERE email = 'carlos@eduscan.com'", (hash_pass,))
+            mensaje = "Carlos actualizado con contraseña 123"
+        else:
+            # Crear Carlos
+            hash_pass = bcrypt.hashpw('123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            cur.execute('''
+                INSERT INTO docentes (nombre, email, password_hash, rol)
+                VALUES (%s, %s, %s, %s)
+            ''', ('Prof. Carlos Ruiz', 'carlos@eduscan.com', hash_pass, 'docente'))
+            
+            # Obtener el ID
+            cur.execute("SELECT id_docente FROM docentes WHERE email = 'carlos@eduscan.com'")
+            carlos_id = cur.fetchone()[0]
+            
+            # Asignar grados 8 y 9
+            cur.execute('''
+                INSERT INTO docente_grados (docente_id, grado) VALUES (%s, 8), (%s, 9)
+                ON CONFLICT (docente_id, grado) DO NOTHING
+            ''', (carlos_id, carlos_id))
+            mensaje = "Carlos creado con éxito"
+        
+        cur.close()
+        conn.close()
+        
+        return {"success": True, "message": mensaje}
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    
 # ============================================
 # MAIN
 # ============================================
