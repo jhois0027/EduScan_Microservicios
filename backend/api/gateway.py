@@ -563,7 +563,7 @@ async def inicializar_base_datos():
         }
         
         if count == 0:
-            # Hash de contraseña 'password123'
+            # Hash de contraseña '123'
             hash_pass = '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.VTtXEyMqCqB7QK'
             
             # Insertar docentes
@@ -608,9 +608,9 @@ async def inicializar_base_datos():
                 for d in docentes
             ],
             "credenciales": {
-                "ana@eduscan.com": "password123 (grados 10° y 11°)",
-                "carlos@eduscan.com": "password123 (grados 8° y 9°)",
-                "admin@eduscan.com": "password123 (todos los grados)"
+                "ana@eduscan.com": "123 (grados 10° y 11°)",
+                "carlos@eduscan.com": "123 (grados 8° y 9°)",
+                "admin@eduscan.com": "123 (todos los grados)"
             }
         }
         
@@ -905,6 +905,38 @@ async def listar_modelos():
                 modelos.append(m.name)
         
         return {"success": True, "modelos": modelos}
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    
+    # ============================================
+# REINICIAR IDs DE ALUMNOS
+# ============================================
+@app.get("/api/reiniciar-ids")
+async def reiniciar_ids():
+    import psycopg2
+    
+    try:
+        DATABASE_URL = os.getenv('DATABASE_URL')
+        conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+        conn.autocommit = True
+        cur = conn.cursor()
+        
+        # Ver cantidad de alumnos actuales
+        cur.execute("SELECT COUNT(*) FROM alumnos")
+        total = cur.fetchone()[0]
+        
+        # Reiniciar la secuencia
+        cur.execute("SELECT setval('alumnos_id_alumno_seq', 1, false)")
+        
+        cur.close()
+        conn.close()
+        
+        return {
+            "success": True, 
+            "message": f"Secuencia reiniciada. Total alumnos: {total}",
+            "total_alumnos": total
+        }
         
     except Exception as e:
         return {"success": False, "error": str(e)}

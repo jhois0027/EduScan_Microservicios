@@ -46,6 +46,8 @@
         button:hover { background: #1e3c72; transform: translateY(-2px); }
         .logout-btn { background: #dc2626; }
         .logout-btn:hover { background: #b91c1c; }
+        .change-password-btn { background: #f59e0b; }
+        .change-password-btn:hover { background: #d97706; }
         .nav-tabs {
             display: flex;
             gap: 10px;
@@ -151,6 +153,9 @@
         <div class="user-info">
             <span id="docenteNombre"></span>
             <span id="gradosInfo" class="grados-badge"></span>
+            <button class="change-password-btn" onclick="abrirModalCambiarPassword()">
+                <i class="fas fa-key"></i> Cambiar contraseña
+            </button>
             <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
         </div>
     </div>
@@ -184,6 +189,20 @@
     </div>
 </div>
 
+<!-- Modal para cambiar contraseña -->
+<div id="modalPassword" class="modal">
+    <div class="modal-content">
+        <h3>🔐 Cambiar Contraseña</h3>
+        <input type="password" id="nuevaPassword" placeholder="Nueva contraseña" style="width: 100%;">
+        <input type="password" id="confirmarPassword" placeholder="Confirmar contraseña" style="width: 100%;">
+        <div id="passwordError" style="color: red; font-size: 12px; margin-bottom: 10px;"></div>
+        <div class="form-buttons">
+            <button type="button" onclick="cerrarModalPassword()">Cancelar</button>
+            <button type="button" onclick="cambiarPassword()" style="background: #f59e0b;">Guardar</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const API_URL = 'https://eduscan-gateway.onrender.com';
     let TOKEN = '';
@@ -208,6 +227,47 @@
         if (nota >= 4.0) return 'badge-aprobado';
         if (nota >= 3.5) return 'badge-mejoramiento';
         return 'badge-reprobado';
+    }
+
+    // ==================== CAMBIAR CONTRASEÑA ====================
+    function abrirModalCambiarPassword() {
+        document.getElementById('modalPassword').style.display = 'flex';
+        document.getElementById('nuevaPassword').value = '';
+        document.getElementById('confirmarPassword').value = '';
+        document.getElementById('passwordError').textContent = '';
+    }
+
+    function cerrarModalPassword() {
+        document.getElementById('modalPassword').style.display = 'none';
+    }
+
+    async function cambiarPassword() {
+        const nuevaPass = document.getElementById('nuevaPassword').value;
+        const confirmarPass = document.getElementById('confirmarPassword').value;
+        
+        if (nuevaPass.length < 3) {
+            document.getElementById('passwordError').textContent = 'La contraseña debe tener al menos 3 caracteres';
+            return;
+        }
+        
+        if (nuevaPass !== confirmarPass) {
+            document.getElementById('passwordError').textContent = 'Las contraseñas no coinciden';
+            return;
+        }
+        
+        try {
+            const response = await fetch(`${API_URL}/api/cambiar-pass/${docenteActual.email}/${nuevaPass}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('✅ Contraseña actualizada exitosamente');
+                cerrarModalPassword();
+            } else {
+                document.getElementById('passwordError').textContent = data.error || 'Error al cambiar contraseña';
+            }
+        } catch (error) {
+            document.getElementById('passwordError').textContent = 'Error de conexión: ' + error.message;
+        }
     }
 
     // ==================== LOGIN ====================
@@ -447,7 +507,7 @@
         
         let html = `<button class="btn-add" onclick="abrirModal('alumnos')">+ Nuevo Alumno</button>
             <h3>📋 Mis Alumnos (${datosCache.alumnos.length})</h3>
-            <table><thead><tr><th>ID</th><th>Nombre</th><th>Grado</th><th>Promedio</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>`;
+            <tr><thead><tr><th>ID</th><th>Nombre</th><th>Grado</th><th>Promedio</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>`;
         
         datosCache.alumnos.forEach(a => {
             const promedio = a.promedio || 0;
@@ -526,7 +586,7 @@
         
         let html = `<button class="btn-add" onclick="abrirModal('modulos')">+ Nuevo Módulo</button>
             <h3>📚 Módulos Académicos (${datosCache.modulos.length})</h3>
-            <table><thead><tr><th>ID</th><th>Nombre</th><th>Profesor</th><th>Créditos</th><th>Horario</th><th>Acciones</th></tr></thead><tbody>`;
+            <tr><thead><tr><th>ID</th><th>Nombre</th><th>Profesor</th><th>Créditos</th><th>Horario</th><th>Acciones</th></tr></thead><tbody>`;
         
         datosCache.modulos.forEach(m => {
             html += `<tr>
