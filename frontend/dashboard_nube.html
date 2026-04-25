@@ -258,18 +258,27 @@
             }
         }
         
-        async function cargarMisAlumnos() {
-            try {
-                const response = await fetch(`${API_URL}/api/mis-alumnos`, { headers: { 'Authorization': `Bearer ${token}` } });
-                const data = await response.json();
-                if (data.success) {
-                    misAlumnos = data.alumnos || [];
-                    document.getElementById('misGrados').innerHTML = `📚 Grados: ${data.mis_grados?.join(', ') || 'Ninguno'}`;
-                }
-            } catch (error) {
-                console.error('Error cargando alumnos:', error);
-            }
+       async function cargarMisAlumnos() {
+    console.log('🔍 Cargando alumnos...');
+    try {
+        const response = await fetch(`${API_URL}/api/mis-alumnos`, { 
+            headers: { 'Authorization': `Bearer ${token}` } 
+        });
+        console.log('📡 Response status:', response.status);
+        const data = await response.json();
+        console.log('📦 Datos recibidos:', data);
+        
+        if (data.success) {
+            misAlumnos = data.alumnos || [];
+            console.log('✅ Alumnos cargados:', misAlumnos.length);
+            document.getElementById('misGrados').innerHTML = `📚 Grados: ${data.mis_grados?.join(', ') || 'Ninguno'}`;
+        } else {
+            console.error('❌ Error en respuesta:', data.error);
         }
+    } catch (error) {
+        console.error('❌ Error cargando alumnos:', error);
+    }
+}
         
         async function cargarMisCalificaciones() {
             try {
@@ -311,10 +320,12 @@
             `;
         }
         
-        function renderStudents() {
-            if (misAlumnos.length === 0) {
-                return `<div class="data-table"><p style="text-align: center; padding: 40px;">📭 No tienes estudiantes asignados</p></div>`;
-            }
+       function renderStudents() {
+    console.log('🎨 Renderizando estudiantes. Total:', misAlumnos.length);
+    
+    if (misAlumnos.length === 0) {
+        return `<div class="data-table"><p style="text-align: center; padding: 40px;">📭 No tienes estudiantes asignados</p></div>`;
+    }
             
             return `
                 <div class="data-table">
