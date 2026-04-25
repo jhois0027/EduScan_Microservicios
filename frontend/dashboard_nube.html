@@ -25,13 +25,14 @@
             animation: slideIn 0.5s ease;
         }
         .login-container h2 {
-            font-size: 28px;
-            text-align: center;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+    font-size: 28px;
+    text-align: center;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    background-clip: text;           /* Standard property first */
+    -webkit-background-clip: text;   /* Vendor prefix second */
+    -webkit-text-fill-color: transparent;
+}
         .login-container input {
             width: 100%;
             padding: 14px;
@@ -72,8 +73,18 @@
             position: fixed;
             width: 280px;
         }
-        .logo { padding: 30px 24px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .logo h2 { font-size: 24px; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+       .logo { 
+    padding: 30px 24px; 
+    border-bottom: 1px solid rgba(255,255,255,0.1); 
+}
+
+.logo h2 { 
+    font-size: 24px; 
+    background: linear-gradient(135deg, #fff, #a78bfa); 
+    background-clip: text;           /* Standard property */
+    -webkit-background-clip: text;   /* Vendor prefix for Safari/old Chrome */
+    -webkit-text-fill-color: transparent; 
+}
         .nav-item {
             padding: 14px 24px;
             margin: 8px 16px;
@@ -158,12 +169,12 @@
         <h2><i class="fas fa-cloud"></i> EduScan</h2>
         <p style="text-align: center; color: #64748b; margin-bottom: 30px;">Sistema Académico - Acceso Docente</p>
         <input type="email" id="email" placeholder="Correo electrónico" value="ana@eduscan.com">
-        <input type="password" id="password" placeholder="Contraseña" value="password123">
+        <input type="password" id="password" placeholder="Contraseña" value="123">
         <button onclick="login()"><i class="fas fa-sign-in-alt"></i> Ingresar</button>
         <div id="loginError" class="error-message"></div>
         <p style="text-align: center; margin-top: 20px; font-size: 12px; color: #94a3b8;">
-            <i class="fas fa-info-circle"></i> Demo: ana@eduscan.com / password=123 (grados 10°-11°)<br>
-            carlos@eduscan.com / password=123 (grados 8°-9°)
+            <i class="fas fa-info-circle"></i> Demo: ana@eduscan.com / 123 (grados 10°-11°)<br>
+            carlos@eduscan.com / 123 (grados 8°-9°)
         </p>
     </div>
 
