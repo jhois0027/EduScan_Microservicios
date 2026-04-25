@@ -146,6 +146,11 @@
     <div id="errorMsg" class="error"></div>
 </div>
 
+<!-- En la sección .user-info, agrega este botón -->
+<button class="change-password-btn" onclick="abrirModalCambiarPassword()">
+    <i class="fas fa-key"></i> Cambiar contraseña
+</button>
+
 <!-- Dashboard -->
 <div id="dashboardDiv" class="dashboard hidden">
     <div class="header">
@@ -175,6 +180,10 @@
     </div>
 </div>
 
+<!-- En la sección .user-info, agrega este botón -->
+<button class="change-password-btn" onclick="abrirModalCambiarPassword()">
+    <i class="fas fa-key"></i> Cambiar contraseña
+</button>
 <!-- Modal para editar/agregar -->
 <div id="modal" class="modal">
     <div class="modal-content">
@@ -507,7 +516,7 @@
         
         let html = `<button class="btn-add" onclick="abrirModal('alumnos')">+ Nuevo Alumno</button>
             <h3>📋 Mis Alumnos (${datosCache.alumnos.length})</h3>
-            <tr><thead><tr><th>ID</th><th>Nombre</th><th>Grado</th><th>Promedio</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>`;
+            <table><thead><tr><th>ID</th><th>Nombre</th><th>Grado</th><th>Promedio</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>`;
         
         datosCache.alumnos.forEach(a => {
             const promedio = a.promedio || 0;
@@ -586,7 +595,7 @@
         
         let html = `<button class="btn-add" onclick="abrirModal('modulos')">+ Nuevo Módulo</button>
             <h3>📚 Módulos Académicos (${datosCache.modulos.length})</h3>
-            <tr><thead><tr><th>ID</th><th>Nombre</th><th>Profesor</th><th>Créditos</th><th>Horario</th><th>Acciones</th></tr></thead><tbody>`;
+            <table><thead><tr><th>ID</th><th>Nombre</th><th>Profesor</th><th>Créditos</th><th>Horario</th><th>Acciones</th></tr></thead><tbody>`;
         
         datosCache.modulos.forEach(m => {
             html += `<tr>
