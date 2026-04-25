@@ -77,7 +77,7 @@ def procesar_imagen_examen(imagen_bytes):
     
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         
         # Preparar imagen
         image = Image.open(io.BytesIO(imagen_bytes))
