@@ -30,23 +30,9 @@
             flex-wrap: wrap;
             gap: 15px;
         }
-        .header h1 {
-            color: #1e3c72;
-            font-size: 28px;
-        }
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        .grados-badge {
-            background: #e0e7ff;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            color: #3730a3;
-        }
+        .header h1 { color: #1e3c72; font-size: 28px; }
+        .user-info { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .grados-badge { background: #e0e7ff; padding: 8px 16px; border-radius: 20px; font-size: 14px; color: #3730a3; }
         button {
             background: #2a5298;
             color: white;
@@ -57,16 +43,9 @@
             font-size: 14px;
             transition: all 0.2s;
         }
-        button:hover {
-            background: #1e3c72;
-            transform: translateY(-2px);
-        }
-        .logout-btn {
-            background: #dc2626;
-        }
-        .logout-btn:hover {
-            background: #b91c1c;
-        }
+        button:hover { background: #1e3c72; transform: translateY(-2px); }
+        .logout-btn { background: #dc2626; }
+        .logout-btn:hover { background: #b91c1c; }
         .nav-tabs {
             display: flex;
             gap: 10px;
@@ -84,13 +63,8 @@
             transition: all 0.2s;
             font-weight: 500;
         }
-        .nav-tab:hover {
-            background: #e5e7eb;
-        }
-        .nav-tab.active {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-        }
+        .nav-tab:hover { background: #e5e7eb; }
+        .nav-tab.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -104,27 +78,11 @@
             padding: 20px;
             text-align: center;
         }
-        .stat-card h3 {
-            font-size: 32px;
-            margin-bottom: 10px;
-        }
-        .table-container {
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        th {
-            background: #f8fafc;
-            color: #1e293b;
-            font-weight: 600;
-        }
+        .stat-card h3 { font-size: 32px; margin-bottom: 10px; }
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th { background: #f8fafc; color: #1e293b; font-weight: 600; }
         .badge {
             padding: 4px 12px;
             border-radius: 20px;
@@ -143,14 +101,36 @@
             border: 1px solid #ddd;
             border-radius: 8px;
         }
-        .form-group {
-            display: inline-block;
-            margin-right: 15px;
+        .btn-edit { background: #f59e0b; margin-right: 5px; }
+        .btn-edit:hover { background: #d97706; }
+        .btn-delete { background: #ef4444; }
+        .btn-delete:hover { background: #dc2626; }
+        .btn-add { background: #10b981; margin-bottom: 15px; }
+        .btn-add:hover { background: #059669; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
         }
-        @media (max-width: 768px) {
-            .nav-tab { padding: 8px 16px; font-size: 12px; }
-            .stat-card h3 { font-size: 24px; }
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
         }
+        .modal-content input, .modal-content select {
+            width: 100%;
+            margin: 10px 0;
+        }
+        .form-buttons { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -175,10 +155,8 @@
         </div>
     </div>
 
-    <!-- Estadísticas -->
     <div class="stats-grid" id="statsContainer"></div>
 
-    <!-- Pestañas de navegación -->
     <div class="nav-tabs">
         <div class="nav-tab active" onclick="cambiarSeccion('alumnos')">📋 Alumnos</div>
         <div class="nav-tab" onclick="cambiarSeccion('examenes')">📝 Exámenes</div>
@@ -187,9 +165,22 @@
         <div class="nav-tab" onclick="cambiarSeccion('estadisticas')">📊 Estadísticas</div>
     </div>
 
-    <!-- Contenido dinámico -->
     <div id="contenido" class="table-container">
         <p style="text-align: center; padding: 40px;">Selecciona una opción</p>
+    </div>
+</div>
+
+<!-- Modal para editar/agregar -->
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle">Editar</h3>
+        <form id="modalForm">
+            <div id="modalFields"></div>
+            <div class="form-buttons">
+                <button type="button" onclick="cerrarModal()">Cancelar</button>
+                <button type="submit" style="background: #10b981;">Guardar</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -204,8 +195,9 @@
         modulos: []
     };
     let seccionActual = 'alumnos';
+    let editandoId = null;
+    let editandoTipo = null;
 
-    // ==================== FUNCIONES DE ESTADO ====================
     function obtenerEstado(nota) {
         if (nota >= 4.0) return 'Aprueba';
         if (nota >= 3.5) return 'Plan de mejoramiento';
@@ -304,7 +296,6 @@
     }
 
     async function cargarModulos() {
-        // Módulos de ejemplo (si no hay endpoint, usar datos estáticos)
         datosCache.modulos = [
             { id: 1, nombre: "Matemáticas", profesor: "Prof. González", creditos: 4, horario: "Lunes 8-10am" },
             { id: 2, nombre: "Español", profesor: "Prof. Martínez", creditos: 4, horario: "Martes 8-10am" },
@@ -321,28 +312,143 @@
         const promedioGeneral = datosCache.alumnos.length > 0 
             ? (datosCache.alumnos.reduce((s, a) => s + (a.promedio || 0), 0) / datosCache.alumnos.length).toFixed(1)
             : 0;
-        const totalExamenes = datosCache.examenes.length;
-        const totalCalificaciones = datosCache.calificaciones.length;
         
         document.getElementById('statsContainer').innerHTML = `
             <div class="stat-card"><h3>${totalAlumnos}</h3><p>Total Alumnos</p></div>
             <div class="stat-card"><h3>${aprobados}</h3><p>Aprobados</p></div>
             <div class="stat-card"><h3>${promedioGeneral}</h3><p>Promedio General</p></div>
-            <div class="stat-card"><h3>${totalExamenes}</h3><p>Exámenes</p></div>
-            <div class="stat-card"><h3>${totalCalificaciones}</h3><p>Calificaciones</p></div>
         `;
     }
 
-    // ==================== RENDERIZADO DE SECCIONES ====================
+    // ==================== CRUD ====================
+    function abrirModal(tipo, id = null) {
+        editandoTipo = tipo;
+        editandoId = id;
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalFields = document.getElementById('modalFields');
+        
+        let item = null;
+        if (id) {
+            if (tipo === 'alumnos') item = datosCache.alumnos.find(a => a.id == id);
+            else if (tipo === 'examenes') item = datosCache.examenes.find(e => e.id == id);
+            else if (tipo === 'modulos') item = datosCache.modulos.find(m => m.id == id);
+        }
+        
+        modalTitle.textContent = id ? `✏️ Editar ${tipo.slice(0, -1)}` : `➕ Nuevo ${tipo.slice(0, -1)}`;
+        
+        if (tipo === 'alumnos') {
+            modalFields.innerHTML = `
+                <input type="text" id="nombre" placeholder="Nombre" value="${item?.nombre || ''}">
+                <input type="number" id="grado" placeholder="Grado" value="${item?.grado || ''}">
+                <input type="text" id="correo" placeholder="Correo" value="${item?.correo || ''}">
+            `;
+        } else if (tipo === 'examenes') {
+            modalFields.innerHTML = `
+                <input type="text" id="nombre" placeholder="Nombre" value="${item?.nombre || ''}">
+                <input type="number" id="grado" placeholder="Grado" value="${item?.grado || ''}">
+                <input type="text" id="materia" placeholder="Materia" value="${item?.materia || ''}">
+            `;
+        } else if (tipo === 'modulos') {
+            modalFields.innerHTML = `
+                <input type="text" id="nombre" placeholder="Nombre" value="${item?.nombre || ''}">
+                <input type="text" id="profesor" placeholder="Profesor" value="${item?.profesor || ''}">
+                <input type="number" id="creditos" placeholder="Créditos" value="${item?.creditos || ''}">
+                <input type="text" id="horario" placeholder="Horario" value="${item?.horario || ''}">
+            `;
+        }
+        
+        modal.style.display = 'flex';
+        
+        document.getElementById('modalForm').onsubmit = (e) => {
+            e.preventDefault();
+            guardarCambios();
+        };
+    }
+
+    function cerrarModal() {
+        document.getElementById('modal').style.display = 'none';
+        editandoId = null;
+        editandoTipo = null;
+    }
+
+    async function guardarCambios() {
+        if (editandoTipo === 'alumnos') {
+            const nuevoAlumno = {
+                id: editandoId || Date.now(),
+                nombre: document.getElementById('nombre').value,
+                grado: parseInt(document.getElementById('grado').value),
+                correo: document.getElementById('correo').value,
+                promedio: 0
+            };
+            
+            if (editandoId) {
+                const index = datosCache.alumnos.findIndex(a => a.id == editandoId);
+                datosCache.alumnos[index] = nuevoAlumno;
+            } else {
+                datosCache.alumnos.push(nuevoAlumno);
+            }
+        } else if (editandoTipo === 'examenes') {
+            const nuevoExamen = {
+                id: editandoId || Date.now(),
+                nombre: document.getElementById('nombre').value,
+                grado: parseInt(document.getElementById('grado').value),
+                materia: document.getElementById('materia').value
+            };
+            
+            if (editandoId) {
+                const index = datosCache.examenes.findIndex(e => e.id == editandoId);
+                datosCache.examenes[index] = nuevoExamen;
+            } else {
+                datosCache.examenes.push(nuevoExamen);
+            }
+        } else if (editandoTipo === 'modulos') {
+            const nuevoModulo = {
+                id: editandoId || Date.now(),
+                nombre: document.getElementById('nombre').value,
+                profesor: document.getElementById('profesor').value,
+                creditos: parseInt(document.getElementById('creditos').value),
+                horario: document.getElementById('horario').value
+            };
+            
+            if (editandoId) {
+                const index = datosCache.modulos.findIndex(m => m.id == editandoId);
+                datosCache.modulos[index] = nuevoModulo;
+            } else {
+                datosCache.modulos.push(nuevoModulo);
+            }
+        }
+        
+        cerrarModal();
+        actualizarEstadisticas();
+        if (seccionActual === editandoTipo) renderizarSeccion();
+    }
+
+    async function eliminarItem(tipo, id) {
+        if (!confirm('¿Estás seguro de eliminar este elemento?')) return;
+        
+        if (tipo === 'alumnos') {
+            datosCache.alumnos = datosCache.alumnos.filter(a => a.id != id);
+        } else if (tipo === 'examenes') {
+            datosCache.examenes = datosCache.examenes.filter(e => e.id != id);
+        } else if (tipo === 'modulos') {
+            datosCache.modulos = datosCache.modulos.filter(m => m.id != id);
+        }
+        
+        actualizarEstadisticas();
+        renderizarSeccion();
+    }
+
+    // ==================== RENDERIZADO ====================
     function renderAlumnos() {
         if (datosCache.alumnos.length === 0) {
             return '<p style="text-align: center; padding: 40px;">📭 No tienes estudiantes asignados</p>';
         }
         
-        let html = `<h3>📋 Mis Alumnos (${datosCache.alumnos.length})</h3>
-            <table>
-                <thead><tr><th>ID</th><th>Nombre</th><th>Grado</th><th>Promedio</th><th>Estado</th></tr></thead>
-                <tbody>`;
+        let html = `<button class="btn-add" onclick="abrirModal('alumnos')">+ Nuevo Alumno</button>
+            <h3>📋 Mis Alumnos (${datosCache.alumnos.length})</h3>
+            <table><thead><tr><th>ID</th><th>Nombre</th><th>Grado</th><th>Promedio</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>`;
+        
         datosCache.alumnos.forEach(a => {
             const promedio = a.promedio || 0;
             const estado = obtenerEstado(promedio);
@@ -353,6 +459,10 @@
                 <td>${a.grado}°</td>
                 <td>${promedio}/5.0</td>
                 <td><span class="badge ${clase}">${estado}</span></td>
+                <td>
+                    <button class="btn-edit" onclick="abrirModal('alumnos', ${a.id})">✏️</button>
+                    <button class="btn-delete" onclick="eliminarItem('alumnos', ${a.id})">🗑️</button>
+                </td>
             </tr>`;
         });
         html += `</tbody></table>`;
@@ -364,16 +474,20 @@
             return '<p style="text-align: center; padding: 40px;">📭 No hay exámenes registrados</p>';
         }
         
-        let html = `<h3>📝 Exámenes (${datosCache.examenes.length})</h3>
-            <table>
-                <thead><tr><th>ID</th><th>Nombre</th><th>Grado</th><th>Materia</th></tr></thead>
-                <tbody>`;
+        let html = `<button class="btn-add" onclick="abrirModal('examenes')">+ Nuevo Examen</button>
+            <h3>📝 Exámenes (${datosCache.examenes.length})</h3>
+            <table><thead><tr><th>ID</th><th>Nombre</th><th>Grado</th><th>Materia</th><th>Acciones</th></tr></thead><tbody>`;
+        
         datosCache.examenes.forEach(e => {
             html += `<tr>
                 <td>${e.id}</td>
                 <td><strong>${e.nombre}</strong></td>
                 <td>${e.grado}°</td>
                 <td>${e.materia}</td>
+                <td>
+                    <button class="btn-edit" onclick="abrirModal('examenes', ${e.id})">✏️</button>
+                    <button class="btn-delete" onclick="eliminarItem('examenes', ${e.id})">🗑️</button>
+                </td>
             </tr>`;
         });
         html += `</tbody></table>`;
@@ -386,9 +500,8 @@
         }
         
         let html = `<h3>⭐ Calificaciones (${datosCache.calificaciones.length})</h3>
-            <table>
-                <thead><tr><th>ID</th><th>Alumno</th><th>Examen</th><th>Nota</th><th>Estado</th><th>Fecha</th></tr></thead>
-                <tbody>`;
+            <table><thead><tr><th>ID</th><th>Alumno</th><th>Examen</th><th>Nota</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>`;
+        
         datosCache.calificaciones.forEach(c => {
             const nota = c.nota || 0;
             const estado = obtenerEstado(nota);
@@ -411,10 +524,10 @@
             return '<p style="text-align: center; padding: 40px;">📭 No hay módulos disponibles</p>';
         }
         
-        let html = `<h3>📚 Módulos Académicos (${datosCache.modulos.length})</h3>
-            <table>
-                <thead><tr><th>ID</th><th>Nombre</th><th>Profesor</th><th>Créditos</th><th>Horario</th></tr></thead>
-                <tbody>`;
+        let html = `<button class="btn-add" onclick="abrirModal('modulos')">+ Nuevo Módulo</button>
+            <h3>📚 Módulos Académicos (${datosCache.modulos.length})</h3>
+            <table><thead><tr><th>ID</th><th>Nombre</th><th>Profesor</th><th>Créditos</th><th>Horario</th><th>Acciones</th></tr></thead><tbody>`;
+        
         datosCache.modulos.forEach(m => {
             html += `<tr>
                 <td>${m.id}</td>
@@ -422,6 +535,10 @@
                 <td>${m.profesor}</td>
                 <td>${m.creditos}</td>
                 <td>${m.horario}</td>
+                <td>
+                    <button class="btn-edit" onclick="abrirModal('modulos', ${m.id})">✏️</button>
+                    <button class="btn-delete" onclick="eliminarItem('modulos', ${m.id})">🗑️</button>
+                </td>
             </tr>`;
         });
         html += `</tbody></table>`;
@@ -449,20 +566,9 @@
         `;
     }
 
-    // ==================== NAVEGACIÓN ====================
-    function cambiarSeccion(seccion) {
-        seccionActual = seccion;
+    function renderizarSeccion() {
         const contenido = document.getElementById('contenido');
-        
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        
-        const tabs = document.querySelectorAll('.nav-tab');
-        const indices = { alumnos: 0, examenes: 1, calificaciones: 2, modulos: 3, estadisticas: 4 };
-        if (tabs[indices[seccion]]) tabs[indices[seccion]].classList.add('active');
-        
-        switch(seccion) {
+        switch(seccionActual) {
             case 'alumnos': contenido.innerHTML = renderAlumnos(); break;
             case 'examenes': contenido.innerHTML = renderExamenes(); break;
             case 'calificaciones': contenido.innerHTML = renderCalificaciones(); break;
@@ -472,13 +578,21 @@
         }
     }
 
-    // ==================== LOGOUT ====================
+    function cambiarSeccion(seccion) {
+        seccionActual = seccion;
+        document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+        const tabs = document.querySelectorAll('.nav-tab');
+        const indices = { alumnos: 0, examenes: 1, calificaciones: 2, modulos: 3, estadisticas: 4 };
+        if (tabs[indices[seccion]]) tabs[indices[seccion]].classList.add('active');
+        renderizarSeccion();
+    }
+
     function logout() {
         localStorage.clear();
         location.reload();
     }
 
-    // ==================== INICIALIZACIÓN ====================
+    // Inicialización
     const savedToken = localStorage.getItem('token');
     const savedDocente = localStorage.getItem('docente');
     if (savedToken && savedDocente) {
