@@ -12,7 +12,7 @@ from datetime import datetime
 import os
 
 # Importar validadores directamente (más confiable que HTTP)
-from ia_validator import validar_calidad_imagen, procesar_imagen_examen
+from .ia_validator import validar_calidad_imagen, procesar_imagen_examen
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
