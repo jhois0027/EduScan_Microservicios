@@ -10,104 +10,172 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(145deg, #eef2ff 0%, #e0e7ff 100%);
+            background: linear-gradient(145deg, #f5f7ff 0%, #eef2ff 100%);
             min-height: 100vh;
             padding: 28px 20px;
-            position: relative;
         }
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.03) 0%, transparent 60%);
-            pointer-events: none;
-            z-index: 0;
-        }
-        .container { max-width: 760px; margin: 0 auto; position: relative; z-index: 2; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        /* Header */
         .header {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(2px);
-            border-radius: 36px;
-            padding: 28px 24px;
-            margin-bottom: 24px;
-            text-align: center;
-            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            background: white;
+            border-radius: 28px;
+            padding: 24px 32px;
+            margin-bottom: 28px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            border: 1px solid rgba(79, 70, 229, 0.1);
         }
         .header h1 {
             background: linear-gradient(135deg, #1e1b4b, #4f46e5);
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
-            margin-bottom: 10px;
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 800;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 12px;
         }
-        .header p { color: #4b5563; font-weight: 500; font-size: 0.95rem; }
+        .user-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        /* Grid de tarjetas */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+        
+        /* Tarjetas */
         .card {
             background: white;
-            border-radius: 32px;
+            border-radius: 28px;
             padding: 28px;
-            margin-bottom: 24px;
-            box-shadow: 0 20px 30px -12px rgba(0, 0, 0, 0.08);
-            border: 1px solid #f0f2f8;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+            border: 1px solid rgba(79, 70, 229, 0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 32px rgba(0,0,0,0.1);
+        }
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #1e293b;
+        }
+        .card-title i { color: #4f46e5; font-size: 1.4rem; }
+        .card-badge {
+            background: #eef2ff;
+            color: #4f46e5;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 12px;
         }
         label {
             font-weight: 600;
-            color: #1e293b;
+            color: #334155;
             margin-bottom: 8px;
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
-        label i { color: #4f46e5; width: 22px; }
-        select, input {
+        select, input, textarea {
             width: 100%;
-            padding: 14px 16px;
+            padding: 12px 16px;
             margin-bottom: 18px;
-            border-radius: 20px;
+            border-radius: 16px;
             border: 1.5px solid #e2e8f0;
             font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             transition: all 0.2s;
         }
-        select:focus, input:focus {
+        select:focus, input:focus, textarea:focus {
             outline: none;
             border-color: #818cf8;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+            background: white;
         }
+        
+      /* Botones */
         button {
-            width: 100%;
-            padding: 14px;
-            border-radius: 28px;
+            padding: 12px 20px;
+            border-radius: 24px;
             font-family: 'Inter', sans-serif;
             font-weight: 600;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             border: none;
             cursor: pointer;
             transition: all 0.2s;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
         }
         button:active { transform: scale(0.97); }
-        .btn-primary { background: linear-gradient(105deg, #4f46e5, #6d28d9); color: white; box-shadow: 0 5px 12px rgba(79, 70, 229, 0.3); }
-        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); }
-        .btn-secondary { background: #f1f5f9; color: #1e293b; border: 1px solid #e2e8f0; }
-        .btn-success { background: linear-gradient(115deg, #059669, #10b981); color: white; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
-        .btn-success:hover:not(:disabled) { transform: translateY(-2px); }
-        .btn-warning { background: linear-gradient(115deg, #d97706, #f59e0b); color: white; }
-        .btn-danger { background: #ef4444; color: white; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-primary { 
+            background: linear-gradient(105deg, #4f46e5, #6d28d9); 
+            color: white; 
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); 
+        }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); }
+
+        .btn-secondary { 
+            background: #f1f5f9; 
+            color: #1e293b; 
+            border: 1px solid #e2e8f0; 
+        }
+
+        .btn-success { 
+            background: linear-gradient(115deg, #059669, #10b981); 
+            color: white; 
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); 
+        }
+        .btn-success:hover:not(:disabled) { transform: translateY(-2px); }
+
+        .btn-warning { 
+            background: linear-gradient(115deg, #d97706, #f59e0b); 
+            color: white; 
+        }
+        .btn-danger { 
+            background: #ef4444; 
+            color: white; 
+        }
+        .btn-outline { 
+            background: transparent; 
+            border: 2px solid #4f46e5; 
+            color: #4f46e5; 
+        }
+        .btn-sm { 
+            padding: 8px 16px; 
+            font-size: 0.8rem; 
+        }
+        .flex-buttons { 
+            display: flex; 
+            gap: 12px; 
+            flex-wrap: wrap; 
+            margin-top: 8px; 
+        }
+
         .camera-preview {
             background: #0f172a;
             border-radius: 32px;
@@ -235,18 +303,68 @@
 </head>
 <body>
 
-<!-- Pantalla de Login -->
+<!-- Pantalla de Login Mejorada -->
 <div id="loginSection" class="login-container">
-    <h2><i class="fas fa-graduation-cap"></i> EduScan</h2>
-    <p style="text-align: center; color: #64748b; margin-bottom: 30px;">Acceso Docente - Corrector IA</p>
-    <input type="email" id="email" placeholder="Correo electrónico" value="ana@eduscan.com">
-    <input type="password" id="password" placeholder="Contraseña" value="123">
-    <button onclick="login()" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Ingresar</button>
-    <div id="loginError" style="color: red; text-align: center; margin-top: 15px;"></div>
-    <p style="text-align: center; margin-top: 20px; font-size: 12px; color: #94a3b8;">
-        <i class="fas fa-info-circle"></i> ana@eduscan.com / 123 (grados 10°-11°)<br>
-        carlos@eduscan.com / 123 (grados 8°-9°)
-    </p>
+    <div class="login-brand">
+        <div class="logo-icon">
+            <i class="fas fa-graduation-cap"></i>
+        </div>
+        <h1>EduScan</h1>
+        <p class="tagline">Corrector de exámenes con IA</p>
+    </div>
+    
+    <div class="login-form">
+        <div class="form-header">
+            <h2>Acceso docente</h2>
+            <p>Ingresa con tus credenciales</p>
+        </div>
+        
+        <div class="input-group">
+            <div class="input-icon">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <input type="email" id="email" placeholder="Correo electrónico" value="ana@eduscan.com">
+        </div>
+        
+        <div class="input-group">
+            <div class="input-icon">
+                <i class="fas fa-lock"></i>
+            </div>
+            <input type="password" id="password" placeholder="Contraseña" value="123">
+            <button type="button" class="toggle-password" onclick="togglePassword()">
+                <i class="fas fa-eye"></i>
+            </button>
+        </div>
+        
+        <button onclick="login()" class="btn-login">
+            <i class="fas fa-sign-in-alt"></i>
+            Ingresar al sistema
+            <i class="fas fa-arrow-right"></i>
+        </button>
+        
+        <div id="loginError" class="error-message"></div>
+    </div>
+    
+    <div class="login-footer">
+        <div class="credenciales-info">
+            <i class="fas fa-info-circle"></i>
+            <span>Credenciales de prueba</span>
+        </div>
+        <div class="credenciales-grid">
+            <div class="credencial-card">
+                <i class="fas fa-chalkboard-user"></i>
+                <strong>ana@eduscan.com</strong>
+                <span>123</span>
+                <small>Grados 10° - 11°</small>
+            </div>
+            <div class="credencial-card">
+                <i class="fas fa-chalkboard-user"></i>
+                <strong>carlos@eduscan.com</strong>
+                <span>123</span>
+                <small>Grados 8° - 9°</small>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Contenido del Corrector (oculto hasta login) -->
