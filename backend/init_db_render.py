@@ -6,8 +6,14 @@ import os
 import sys
 from datetime import datetime
 
-# URL DIRECTA (sin .env)
-DATABASE_URL = "postgresql://eduscan_user:BEAItZDgqRvBauTjKi52BYgGO7rZqAct@dpg-d7g54nhj2pic7386h040.oregon-postgres.render.com/eduscan_db_72hg"
+# USAR VARIABLE DE ENTORNO (NO hardcodear)
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if not DATABASE_URL:
+    print("❌ ERROR: DATABASE_URL no está configurada")
+    print("   Configura la variable de entorno o usa:")
+    print("   export DATABASE_URL='postgresql://...'")
+    sys.exit(1)
 
 print(f"🔌 Conectando a: {DATABASE_URL.split('@')[0].replace('://', '://***:***@')}@***")
 

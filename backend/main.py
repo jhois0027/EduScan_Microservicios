@@ -1,19 +1,26 @@
 # backend/main.py
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 import os
 import sys
 import psycopg2
 from psycopg2.extras import RealDictCursor
+import jwt
+import bcrypt
+from datetime import datetime, timedelta
+import base64
+import httpx
+import json
+import re
 
 # Agregar el directorio actual al path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-app = FastAPI(title="EduScan API", version="3.0.0")
+app = FastAPI(title="EduScan API Gateway", version="1.0")
 
 # CORS
 app.add_middleware(
@@ -25,13 +32,51 @@ app.add_middleware(
 )
 
 # ============================================
+# CONFIGURACIÓN
+# ============================================
+
+SECRET_KEY = os.getenv("SECRET_KEY", "tu-clave-secreta-cambiar-en-produccion")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 horas
+
+DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/eduscan')
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+
+security = HTTPBearer()
+
+# ============================================
 # CONEXIÓN A BASE DE DATOS
 # ============================================
 
-DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/eduscan')
-
 def get_db():
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+
+# ============================================
+# FUNCIONES DE AUTENTICACIÓN
+# ============================================
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+
+def get_current_docente(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        docente_id: int = payload.get("sub")
+        if docente_id is None:
+            raise HTTPException(status_code=401, detail="Token inválido")
+        return docente_id
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expirado")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Token inválido")
 
 # ============================================
 # MODELOS
@@ -41,7 +86,7 @@ class Alumno(BaseModel):
     nombre: str
     correo: str
     grado: int
-    calificacion: Optional[float] = 0
+    promedio: Optional[float] = 0
 
 class Modulo(BaseModel):
     nombre: str
@@ -57,21 +102,180 @@ class Examen(BaseModel):
     qr_code: Optional[str] = None
 
 # ============================================
-# ENDPOINTS - ALUMNOS
+# ENDPOINTS PÚBLICOS
+# ============================================
+
+@app.get("/")
+async def root():
+    return {
+        "message": "EduScan API Gateway",
+        "status": "online",
+        "version": "1.0",
+        "endpoints": {
+            "/health": "Health check",
+            "/api/login": "Login docente (POST)",
+            "/api/mis-alumnos": "Alumnos del docente (GET, requiere token)",
+            "/api/mis-calificaciones": "Calificaciones del docente (GET, requiere token)",
+            "/api/alumnos": "CRUD alumnos (GET/POST/PUT/DELETE)",
+            "/api/modulos": "CRUD módulos",
+            "/api/examenes": "CRUD exámenes",
+            "/api/estadisticas": "Estadísticas generales",
+            "/api/corregir-examen": "Corregir examen con IA (POST)",
+            "/docs": "Documentación Swagger"
+        }
+    }
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "service": "EduScan API Gateway", "version": "1.0"}
+
+# ============================================
+# AUTENTICACIÓN
+# ============================================
+
+@app.post("/api/login")
+async def login(email: str, password: str):
+    """Login para docentes - Devuelve token JWT"""
+    try:
+        db = get_db()
+        cur = db.cursor()
+        
+        cur.execute("SELECT id_docente, nombre, email, password_hash, rol FROM docentes WHERE email = %s", (email,))
+        docente = cur.fetchone()
+        cur.close()
+        db.close()
+        
+        if not docente:
+            return {"success": False, "error": "Credenciales inválidas"}
+        
+        if not verify_password(password, docente['password_hash']):
+            return {"success": False, "error": "Credenciales inválidas"}
+        
+        token = create_access_token(data={"sub": docente['id_docente'], "rol": docente['rol']})
+        
+        return {
+            "success": True,
+            "token": token,
+            "docente": {
+                "id": docente['id_docente'],
+                "nombre": docente['nombre'],
+                "email": docente['email'],
+                "rol": docente['rol']
+            }
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@app.get("/api/verificar-token")
+async def verificar_token(docente_id: int = Depends(get_current_docente)):
+    """Verifica si el token es válido"""
+    return {"success": True, "docente_id": docente_id}
+
+# ============================================
+# ENDPOINTS SEGREGADOS POR DOCENTE
+# ============================================
+
+@app.get("/api/mis-alumnos")
+async def get_mis_alumnos(docente_id: int = Depends(get_current_docente)):
+    """Obtiene SOLO los alumnos del docente autenticado"""
+    try:
+        db = get_db()
+        cur = db.cursor()
+        
+        # Obtener grados que enseña este docente
+        cur.execute("SELECT grado FROM docente_grados WHERE docente_id = %s", (docente_id,))
+        grados = [row['grado'] for row in cur.fetchall()]
+        
+        if not grados:
+            cur.close()
+            db.close()
+            return {"success": True, "alumnos": [], "mis_grados": []}
+        
+        # Obtener alumnos SOLO de esos grados
+        placeholders = ','.join(['%s'] * len(grados))
+        cur.execute(f"""
+            SELECT id_alumno, nombre, correo, grado, promedio 
+            FROM alumnos 
+            WHERE grado IN ({placeholders})
+            ORDER BY grado, nombre
+        """, grados)
+        
+        alumnos = []
+        for row in cur.fetchall():
+            alumnos.append({
+                "id": row['id_alumno'],
+                "nombre": row['nombre'],
+                "correo": row['correo'],
+                "grado": row['grado'],
+                "promedio": float(row['promedio']) if row['promedio'] else 0
+            })
+        
+        cur.close()
+        db.close()
+        
+        return {
+            "success": True,
+            "alumnos": alumnos,
+            "mis_grados": grados,
+            "total": len(alumnos)
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@app.get("/api/mis-calificaciones")
+async def get_mis_calificaciones(docente_id: int = Depends(get_current_docente)):
+    """Obtiene SOLO las calificaciones de los alumnos del docente"""
+    try:
+        db = get_db()
+        cur = db.cursor()
+        
+        # Obtener grados del docente
+        cur.execute("SELECT grado FROM docente_grados WHERE docente_id = %s", (docente_id,))
+        grados = [row['grado'] for row in cur.fetchall()]
+        
+        if not grados:
+            cur.close()
+            db.close()
+            return {"success": True, "calificaciones": []}
+        
+        placeholders = ','.join(['%s'] * len(grados))
+        cur.execute(f"""
+            SELECT a.nombre as alumno_nombre, a.grado, e.puntaje, e.fecha, e.examen_nombre
+            FROM evaluacion e
+            JOIN alumnos a ON e.id_alumno = a.id_alumno
+            WHERE a.grado IN ({placeholders})
+            ORDER BY e.fecha DESC, a.grado, a.nombre
+            LIMIT 50
+        """, grados)
+        
+        calificaciones = []
+        for row in cur.fetchall():
+            calificaciones.append({
+                "alumno": row['alumno_nombre'],
+                "grado": row['grado'],
+                "nota": float(row['puntaje']) if row['puntaje'] else 0,
+                "fecha": str(row['fecha']),
+                "examen": row['examen_nombre'] or "Examen"
+            })
+        
+        cur.close()
+        db.close()
+        
+        return {"success": True, "calificaciones": calificaciones, "total": len(calificaciones)}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+# ============================================
+# CRUD ALUMNOS (con autenticación)
 # ============================================
 
 @app.get("/api/alumnos")
-def get_alumnos():
-    db = get_db()
-    cur = db.cursor()
-    cur.execute("SELECT * FROM alumnos ORDER BY calificacion DESC")
-    alumnos = cur.fetchall()
-    cur.close()
-    db.close()
-    return {"alumnos": alumnos}
+def get_alumnos(docente_id: int = Depends(get_current_docente)):
+    """Lista todos los alumnos (filtrados por grado del docente)"""
+    return get_mis_alumnos(docente_id)
 
 @app.get("/api/alumnos/{id_alumno}")
-def get_alumno(id_alumno: int):
+def get_alumno(id_alumno: int, docente_id: int = Depends(get_current_docente)):
     db = get_db()
     cur = db.cursor()
     cur.execute("SELECT * FROM alumnos WHERE id_alumno = %s", (id_alumno,))
@@ -83,13 +287,13 @@ def get_alumno(id_alumno: int):
     return alumno
 
 @app.post("/api/alumnos")
-def crear_alumno(alumno: Alumno):
+def crear_alumno(alumno: Alumno, docente_id: int = Depends(get_current_docente)):
     db = get_db()
     cur = db.cursor()
     cur.execute(
-        """INSERT INTO alumnos (nombre, correo, grado, calificacion) 
+        """INSERT INTO alumnos (nombre, correo, grado, promedio) 
            VALUES (%s, %s, %s, %s) RETURNING *""",
-        (alumno.nombre, alumno.correo, alumno.grado, alumno.calificacion)
+        (alumno.nombre, alumno.correo, alumno.grado, alumno.promedio)
     )
     nuevo = cur.fetchone()
     db.commit()
@@ -98,14 +302,14 @@ def crear_alumno(alumno: Alumno):
     return nuevo
 
 @app.put("/api/alumnos/{id_alumno}")
-def editar_alumno(id_alumno: int, alumno: Alumno):
+def editar_alumno(id_alumno: int, alumno: Alumno, docente_id: int = Depends(get_current_docente)):
     db = get_db()
     cur = db.cursor()
     cur.execute(
         """UPDATE alumnos 
-           SET nombre=%s, correo=%s, grado=%s, calificacion=%s 
+           SET nombre=%s, correo=%s, grado=%s, promedio=%s 
            WHERE id_alumno=%s RETURNING *""",
-        (alumno.nombre, alumno.correo, alumno.grado, alumno.calificacion, id_alumno)
+        (alumno.nombre, alumno.correo, alumno.grado, alumno.promedio, id_alumno)
     )
     actualizado = cur.fetchone()
     db.commit()
@@ -116,7 +320,7 @@ def editar_alumno(id_alumno: int, alumno: Alumno):
     return actualizado
 
 @app.delete("/api/alumnos/{id_alumno}")
-def eliminar_alumno(id_alumno: int):
+def eliminar_alumno(id_alumno: int, docente_id: int = Depends(get_current_docente)):
     db = get_db()
     cur = db.cursor()
     cur.execute("DELETE FROM alumnos WHERE id_alumno = %s RETURNING id_alumno", (id_alumno,))
@@ -231,7 +435,145 @@ def eliminar_examen(id_examen: int):
     return {"msg": "Examen eliminado"}
 
 # ============================================
-# ENDPOINTS - ESTADÍSTICAS
+# CORRECCIÓN CON IA (GEMINI)
+# ============================================
+
+@app.post("/api/corregir-examen")
+async def corregir_examen(
+    imagen: UploadFile = File(...),
+    id_plantilla: Optional[int] = Form(None)
+):
+    """
+    Corrige un examen usando Gemini AI.
+    Si se proporciona id_plantilla, compara contra la clave del profesor.
+    """
+    try:
+        image_bytes = await imagen.read()
+        if len(image_bytes) < 1000:
+            return {"success": False, "error": "Imagen demasiado pequeña o inválida"}
+        
+        image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+        
+        if not GEMINI_API_KEY:
+            # Simular corrección si no hay API key
+            return {
+                "success": True,
+                "nota": round(3.5 + (hash(image_bytes) % 15) / 10, 1),
+                "feedback": "Corrección simulada (API no configurada)",
+                "confianza": 0.75
+            }
+        
+        prompt = """Eres un corrector de exámenes. Analiza DETALLADAMENTE la imagen del examen del alumno.
+
+ESCALA DE NOTAS (0.0 a 5.0):
+- 5.0: Todo correcto y completo
+- 4.0–4.9: Mayoría correctas
+- 3.0–3.9: Aproximadamente la mitad correctas
+- 1.0–2.9: Pocas correctas
+- 0.0: Nada correcto o en blanco
+
+Devuelve SOLO JSON válido:
+{
+  "nota": 4.2,
+  "preguntas_totales": 10,
+  "respuestas_correctas": 8,
+  "feedback": "Descripción del desempeño",
+  "debilidades": ["tema a mejorar"],
+  "fortalezas": ["tema dominado"],
+  "confianza": 0.85
+}"""
+        
+        body = {
+            "contents": [{
+                "parts": [
+                    {"text": prompt},
+                    {"inline_data": {"mime_type": "image/jpeg", "data": image_base64}}
+                ]
+            }]
+        }
+        
+        async with httpx.AsyncClient(timeout=40) as client:
+            resp = await client.post(GEMINI_URL, json=body)
+            resp_data = resp.json()
+        
+        texto = resp_data["candidates"][0]["content"]["parts"][0]["text"]
+        match = re.search(r'\{[\s\S]*?\}', texto)
+        
+        if not match:
+            return {"success": False, "error": "La IA no devolvió un resultado legible"}
+        
+        resultado = json.loads(match.group())
+        nota = max(0.0, min(5.0, float(resultado.get("nota", 0))))
+        nota = round(nota, 1)
+        
+        if nota >= 4.5:
+            estado = "Excelente 🏆"
+        elif nota >= 3.9:
+            estado = "Aprueba ✅"
+        elif nota >= 3.0:
+            estado = "Plan de mejoramiento ⚠️"
+        else:
+            estado = "Reprueba ❌"
+        
+        return {
+            "success": True,
+            "nota": nota,
+            "escala": "0-5",
+            "estado": estado,
+            "respuestas_correctas": resultado.get("respuestas_correctas", 0),
+            "preguntas_totales": resultado.get("preguntas_totales", 0),
+            "feedback": resultado.get("feedback", f"Nota: {nota}/5.0"),
+            "debilidades": resultado.get("debilidades", []),
+            "fortalezas": resultado.get("fortalezas", []),
+            "confianza": resultado.get("confianza", 0.8)
+        }
+        
+    except Exception as e:
+        return {"success": False, "error": f"Error al procesar: {str(e)}"}
+
+# ============================================
+# NUEVA EVALUACIÓN
+# ============================================
+
+@app.post("/nueva_evaluacion")
+async def nueva_evaluacion(request: dict, docente_id: int = Depends(get_current_docente)):
+    """Guardar nueva evaluación y actualizar promedio del alumno"""
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        
+        cursor.execute("""
+            INSERT INTO evaluacion (id_alumno, puntaje, fecha, examen_nombre, feedback, confianza_validacion)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+            request.get('id_alumno'),
+            request.get('puntaje'),
+            request.get('fecha'),
+            request.get('examen_nombre'),
+            request.get('feedback'),
+            request.get('confianza_validacion', 0.85)
+        ))
+        
+        # Calcular el nuevo promedio
+        cursor.execute("SELECT AVG(puntaje) FROM evaluacion WHERE id_alumno = %s", (request.get('id_alumno'),))
+        nuevo_promedio = cursor.fetchone()[0]
+        
+        cursor.execute("UPDATE alumnos SET promedio = %s WHERE id_alumno = %s", (nuevo_promedio, request.get('id_alumno')))
+        
+        db.commit()
+        cursor.close()
+        db.close()
+        
+        return {
+            "success": True,
+            "message": f"Calificación {request.get('puntaje')}/5.0 guardada",
+            "nuevo_promedio": round(nuevo_promedio, 2) if nuevo_promedio else 0
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+# ============================================
+# ESTADÍSTICAS
 # ============================================
 
 @app.get("/api/estadisticas")
@@ -242,9 +584,9 @@ def get_estadisticas():
     total_alumnos = cur.fetchone()["total"]
     cur.execute("SELECT COUNT(*) as total FROM examenes")
     total_examenes = cur.fetchone()["total"]
-    cur.execute("SELECT AVG(calificacion) as promedio FROM alumnos")
+    cur.execute("SELECT AVG(promedio) as promedio FROM alumnos")
     promedio = cur.fetchone()["promedio"] or 0
-    cur.execute("SELECT MAX(calificacion) as maximo FROM alumnos")
+    cur.execute("SELECT MAX(promedio) as maximo FROM alumnos")
     maximo = cur.fetchone()["maximo"] or 0
     cur.close()
     db.close()
@@ -256,73 +598,22 @@ def get_estadisticas():
     }
 
 # ============================================
-# SERVIR FRONTEND (ARCHIVOS HTML)
-# IMPORTANTE: La carpeta frontend está en la raíz, no dentro de backend
+# SERVIDOR FRONTEND
 # ============================================
 
-# La ruta a la carpeta frontend (un nivel arriba de backend)
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
 
-@app.get("/")
-async def serve_frontend():
-    """Servir el dashboard principal"""
-    
-    # Verificar si la carpeta frontend existe
-    if not os.path.exists(FRONTEND_DIR):
-        return {
-            "message": "EduScan API funcionando",
-            "status": "online",
-            "error": f"No se encontró la carpeta frontend en: {FRONTEND_DIR}",
-            "current_directory": os.getcwd(),
-            "files": os.listdir(os.getcwd())
-        }
-    
-    # Lista de posibles archivos a servir
-    files_to_try = [
-        "dashboard_mobile.html",
-        "index.html",
-        "dashboard_pc.html",
-        "dashboard.html"
-    ]
-    
-    for filename in files_to_try:
-        filepath = os.path.join(FRONTEND_DIR, filename)
-        if os.path.exists(filepath):
-            return FileResponse(filepath)
-    
-    # Si no hay archivos HTML, mostrar lista de archivos disponibles
-    return {
-        "message": "No se encontró ningún archivo HTML",
-        "frontend_files": os.listdir(FRONTEND_DIR),
-        "suggested_endpoints": {
-            "GET /api/alumnos": "Lista de alumnos",
-            "GET /api/modulos": "Lista de módulos",
-            "GET /api/examenes": "Lista de exámenes",
-            "GET /api/estadisticas": "Estadísticas",
-            "GET /docs": "Documentación Swagger"
-        }
-    }
-
-# Servir archivos estáticos (CSS, JS, imágenes)
-if os.path.exists(FRONTEND_DIR):
-    app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+@app.get("/dashboard")
+async def serve_dashboard():
+    if os.path.exists(os.path.join(FRONTEND_DIR, "dashboard_corrector.html")):
+        return FileResponse(os.path.join(FRONTEND_DIR, "dashboard_corrector.html"))
+    return {"message": "Dashboard no encontrado"}
 
 # ============================================
-# HEALTH CHECK
+# INICIALIZAR SERVIDOR
 # ============================================
 
-@app.get("/health")
-def health_check():
-    return {"status": "ok", "service": "EduScan API", "version": "3.0"}
-
-@app.get("/api")
-def api_info():
-    return {
-        "message": "EduScan API",
-        "endpoints": [
-            "/api/alumnos",
-            "/api/modulos", 
-            "/api/examenes",
-            "/api/estadisticas"
-        ]
-    }
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse
 import httpx
 import os
 
-app = FastAPI(title="EduScan API Gateway", version="2.0.0")
+app = FastAPI(title="EduScan API Gateway", version="1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -163,7 +163,7 @@ async def root():
     <body>
         <div class="container">
             <div class="header">
-                <h1>Ì≥° EduScan API Gateway</h1>
+                <h1>ÔøΩÔøΩÔøΩ EduScan API Gateway</h1>
                 <p>Punto de entrada √∫nico para todos los servicios de EduScan</p>
                 <div class="badge">
                     <i class="fas fa-code"></i> REST API ¬∑ <i class="fas fa-shield-alt"></i> CORS Enabled ¬∑ <i class="fas fa-chart-line"></i> v2.0.0
@@ -290,11 +290,11 @@ async def root():
             <div class="services">
                 <h3><i class="fas fa-network-wired"></i> Microservicios Conectados</h3>
                 <div class="service-list">
-                    <span class="service-item">Ì≥ä eduscan-database</span>
-                    <span class="service-item">Ì∑† eduscan-ia</span>
+                    <span class="service-item">ÔøΩÔøΩÔøΩ eduscan-database</span>
+                    <span class="service-item">ÔøΩÔøΩÔøΩ eduscan-ia</span>
                     <span class="service-item">‚öôÔ∏è eduscan-procesamiento</span>
-                    <span class="service-item">Ì∑ÑÔ∏è EduScan_db (PostgreSQL)</span>
-                    <span class="service-item">Ìæ® eduscan-dashboard</span>
+                    <span class="service-item">ÔøΩÔøΩÔøΩÔ∏è EduScan_db (PostgreSQL)</span>
+                    <span class="service-item">ÔøΩÔøΩÔøΩ eduscan-dashboard</span>
                 </div>
             </div>
 
@@ -311,7 +311,7 @@ async def root():
 # ============================================
 @app.get("/health")
 async def health():
-    return {"status": "healthy", "service": "gateway", "version": "2.0.0"}
+    return {"status": "healthy", "service": "gateway", "version": "1.0"}
 
 # ============================================
 # PROXY A OTROS SERVICIOS

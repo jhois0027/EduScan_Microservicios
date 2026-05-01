@@ -3,7 +3,7 @@ services:
   - type: web
     name: eduscan-gateway
     runtime: python
-    repo: https://github.com/tu-usuario/EduScan  # Cambia por tu repo
+    repo: https://github.com/jhois0027/EduScan_Microservicios.git  # Cambia por tu repo
     plan: free
     region: oregon
     buildCommand: |

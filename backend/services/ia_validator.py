@@ -136,7 +136,7 @@ def procesar_imagen_examen(imagen_bytes):
             if nota < 3.0:
                 estado_texto = "Reprueba"
                 emoji = "❌"
-            elif nota < 3.8:
+            elif nota < 3.7:
                 estado_texto = "Plan de mejoramiento"
                 emoji = "⚠️"
             else:

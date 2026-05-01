@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import jwt
 import bcrypt
 
-app = FastAPI(title="EduScan Gateway", version="2.0")
+app = FastAPI(title="EduScan Gateway", version="1.0")
 
 # CORS
 app.add_middleware(
@@ -62,7 +62,7 @@ async def root():
     return {
         "message": "EduScan API Gateway",
         "status": "online",
-        "version": "2.0",
+        "version": "1.0",
         "timestamp": datetime.now().isoformat(),
         "endpoints": {
             "/": "Información de la API",
@@ -245,9 +245,9 @@ async def get_alumnos():
         "success": True,
         "alumnos": [
             {"id": 1, "nombre": "Valentina Rojas", "grado": 11, "promedio": 98},
-            {"id": 2, "nombre": "Mateo Herrera", "grado": 10, "promedio": 85},
-            {"id": 3, "nombre": "Sofia Ramirez", "grado": 11, "promedio": 96},
-            {"id": 4, "nombre": "Isabella Torres", "grado": 11, "promedio": 100}
+            {"id": 2, "nombre": "Mateo Herrera", "grado": 10, "promedio": 55},
+            {"id": 3, "nombre": "Sofia Ramirez", "grado": 11, "promedio": 76},
+            {"id": 4, "nombre": "Isabella Torres", "grado": 11, "promedio": 60}
         ],
         "total": 4
     }
@@ -259,9 +259,10 @@ async def get_examenes():
         "examenes": [
             {"id": 1, "nombre": "Matematicas - Algebra", "grado": 10, "materia": "Matematicas"},
             {"id": 2, "nombre": "Ciencias Naturales", "grado": 8, "materia": "Ciencias"},
-            {"id": 3, "nombre": "Lengua y Literatura", "grado": 11, "materia": "Lengua"}
-        ],
-        "total": 3
+            {"id": 3, "nombre": "Lengua y Literatura", "grado": 11, "materia": "Lengua"},
+            {"id": 4, "nombre": "Historia Universal", "grado": 9, "materia": "Historia"}
+        ],  
+        "total": 4
     }
 
 @app.get("/api/calificaciones")
@@ -508,9 +509,9 @@ async def inicializar_base_datos():
     Llama a esta URL una vez para crear las tablas necesarias.
     
     Credenciales que se crearán:
-    - ana@eduscan.com / password123 (ve grados 10° y 11°)
-    - carlos@eduscan.com / password123 (ve grados 8° y 9°)
-    - admin@eduscan.com / password123 (ve todo)
+    - ana@eduscan.com / 123 (ve grados 10° y 11°)
+    - carlos@eduscan.com / 123 (ve grados 8° y 9°)
+    - admin@eduscan.com / 123 (ve todo)
     """
     import psycopg2
     

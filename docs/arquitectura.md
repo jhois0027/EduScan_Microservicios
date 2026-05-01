@@ -20,20 +20,23 @@ EduScan utiliza una arquitectura de **microservicios** independientes y desacopl
   - Segmentación de preguntas
 
 ### 3. Servicio de IA (Puerto 8002)
-- **Responsabilidad**: Clasificar respuestas usando Deep Learning
-- **Tecnología**: TensorFlow / Red Neuronal Convolucional
-- **Arquitectura del modelo**:
-  - Capa Conv2D (32 filtros, 3x3)
-  - Capa MaxPooling2D
-  - Capa Conv2D (64 filtros, 3x3)
-  - Capa MaxPooling2D
-  - Capa Flatten
-  - Capa Dense (128 neuronas)
-  - Capa Dense (4 neuronas, salida A/B/C/D)
+- **Responsabilidad**: Corregir exámenes usando IA generativa
+- **Tecnología**: Google Gemini API (modelo 2.5-flash)
+- **Cómo funciona**:
+  1. Recibe la imagen del examen
+  2. Gemini analiza las respuestas del alumno
+  3. Calcula nota en escala 0-5
+  4. Genera feedback automático
+
+### ¿Por qué Gemini y no un modelo propio?
+- ✅ No requiere entrenamiento previo
+- ✅ Precisión excelente desde el día 1
+- ✅ Soporta imágenes y texto
+- ✅ Escalable sin infraestructura adicional
 
 ### 4. Servicio de Base de Datos (Puerto 8003)
 - **Responsabilidad**: Almacenar resultados y configuraciones
-- **Tecnología**: PostgreSQL (futuro)
+- **Tecnología**: PostgreSQL
 
 ## Comunicación entre Servicios
 Frontend → Gateway → Procesamiento → IA → Resultado
