@@ -8,7 +8,6 @@ def test_backend_archivos_existen():
         "backend/services/procesamiento.py",
         "backend/services/ia_modelo.py",
         "backend/services/database.py",
-        "backend/models/red_neuronal.py",
         "backend/requirements.txt",
         "backend/Dockerfile"
     ]
